@@ -39,8 +39,8 @@ spring:
 ---
 # SMS properties
 sms:
-  accessKeyId: LTAI5tKRvNSFC3Tv1cjTaK6d
-  accessKeySecret: Xtx3hhws9oKfHyLiUEFbIGIB0Wz7CA
+  accessKeyId: test
+  accessKeySecret: test
   regionId: cn-hangzhou
   signName: 中小企业供应链金融系统
   templateCode: SMS_465116274
