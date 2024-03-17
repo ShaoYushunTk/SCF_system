@@ -1,0 +1,49 @@
+# server port
+server:
+  port: 8083
+
+---
+# mysql
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/scf_system?useServerPrepStmts=true
+    username: root
+    password:
+    type: com.alibaba.druid.pool.DruidDataSource
+
+---
+# mybatis-plus
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: assign_id
+
+---
+# cd /usr/local/redis-7.2.4
+# ./src/redis-server ./redis.conf
+spring:
+  data:
+    redis:
+      host: 47.113.187.237
+      port: 6379
+      password: root
+      database: 0
+  cache:
+    redis:
+      time-to-live: 1800000 #ms
+
+---
+# SMS properties
+sms:
+  accessKeyId: LTAI5tKRvNSFC3Tv1cjTaK6d
+  accessKeySecret: Xtx3hhws9oKfHyLiUEFbIGIB0Wz7CA
+  regionId: cn-hangzhou
+  signName: 中小企业供应链金融系统
+  templateCode: SMS_465116274
+
+
+

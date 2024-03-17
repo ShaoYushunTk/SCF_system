@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Title</title>
+    <!-- 引入 Element UI 的样式文件 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../js/validate.js"></script>
+    <script src="../../api/login.js"></script>
+
+    <div class="login" id="login-app">
+        <div class="login-box">
+            <el-form ref="loginForm" :model="loginForm" :rules="loginRules" label-width="80px">
+                <el-form-item label="Company Type" prop="companyType">
+                    <el-select v-model="loginForm.companyType" placeholder="Select company type">
+                        <el-option label="系统管理员" value="SYSTEM_ADMIN"></el-option>
+                        <el-option label="中小企业（融资方）" value="SMEs"></el-option>
+                        <el-option label="核心企业（债务人）" value="CORE_ENTERPRISE"></el-option>
+                        <el-option label="金融机构（资金方）" value="FINANCIAL_INSTITUTION"></el-option>
+                        <el-option label="物流公司" value="LOGISTICS_COMPANY"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="Username" prop="username">
+                    <el-input v-model="loginForm.username"></el-input>
+                </el-form-item>
+                <el-form-item label="Password" prop="password">
+                    <el-input type="password" v-model="loginForm.password"></el-input>
+                </el-form-item>
+                <el-form-item style="width:100%;">
+                    <el-button :loading="loading" class="login-btn" size="medium" type="primary" style="width:100%;"
+                               @click.native.prevent="handleLogin">
+                        <span v-if="!loading">登录</span>
+                        <span v-else>登录中...</span>
+                    </el-button>
+                </el-form-item>
+            </el-form>
+            <a href="user_login.html">普通用户登录</a>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#login-app',
+            data() {
+                return {
+                    loginForm: {
+                        companyType: 'SYSTEM_ADMIN',
+                        username: 'admin',
+                        password: 'admin'
+                    },
+                    loading: false,
+                };
+            },
+            computed: {
+                loginRules() {
+                    const validateCompanyType = (rule, value, callback) => {
+                        if (!value) {
+                            callback(new Error('请选择公司类型'));
+                        } else {
+                            callback();
+                        }
+                    };
+                    const validateUsername = (rule, value, callback) => {
+                        if (value.length < 1 ) {
+                            callback(new Error('请输入用户名'))
+                        } else {
+                            callback()
+                        }
+                    }
+                    const validatePassword = (rule, value, callback) => {
+                        const passwordRegex = /^[A-Za-z0-9]{1,32}$/;
+                        if (!passwordRegex.test(value)) {
+                            callback(new Error('密码必须由字母和数字组成，长度在1到32之间'));
+                        } else {
+                            callback();
+                        }
+                    };
+                    // trigger指定了何时触发对应字段的验证
+                    return {
+                        'companyType': [{ 'validator': validateCompanyType, 'trigger': 'change' }],
+                        'username': [{ 'validator': validateUsername, 'trigger': 'blur' }],
+                        'password': [{ 'validator': validatePassword, 'trigger': 'blur' }]
+                    }
+                }
+            },
+            created() {
+            },
+            methods: {
+                async handleLogin() {
+                    this.$refs.loginForm.validate(async (valid) => {
+                        if (valid) {
+                            this.loading = true;
+                            try {
+                                let res = await loginApi(this.loginForm);
+                                if (String(res.code) === '1') {
+                                    localStorage.setItem('userInfo', JSON.stringify(res.data));
+                                    // 在请求成功后进行页面跳转
+                                    let companyType = res.data.companyType;
+                                    if (companyType === 'SYSTEM_ADMIN') {
+                                        window.location.href = '../index/SA_index.html';
+                                    } else if (companyType === 'SMEs') {
+                                        window.location.href = '../index/SMEs_index.html';
+                                    } else if (companyType === 'CORE_ENTERPRISE') {
+                                        window.location.href = '../index/CE_index.html';
+                                    } else if (companyType === 'FINANCIAL_INSTITUTION') {
+                                        window.location.href = '../index/FI_index.html';
+                                    } else if (companyType === 'LOGISTICS_COMPANY') {
+                                        window.location.href = '../index/LC_index.html';
+                                    } else {
+                                        window.location.href = '../../index.html';
+                                    }
+                                } else {
+                                    this.$message.error(res.msg);
+                                    this.loading = false;
+                                }
+                            } catch (error) {
+                                console.error('登录请求出错：', error);
+                                this.loading = false;
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
