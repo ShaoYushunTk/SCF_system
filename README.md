@@ -12,7 +12,7 @@
 #### 2.3 Aliyun短信服务
 申请后自行修改yaml文件配置
 #### 2.4 hyperledger-fabric
-智能合约代码位于src/main/resource/chaincode-go
+智能合约代码位于src/main/resource/chaincode-go  
 参考：
 - https://hyperledger-fabric.readthedocs.io/zh-cn/latest/test_network.html
 - https://blog.csdn.net/weixin_44750512/article/details/108578755
