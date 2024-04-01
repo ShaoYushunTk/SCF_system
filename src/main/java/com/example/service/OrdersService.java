@@ -25,4 +25,6 @@ public interface OrdersService extends IService<Orders> {
     List<Orders> listByCompanyId(List<String> idList);
 
     Result deleteByCompanyId(String companyId);
+
+    Result deleteById(String id);
 }

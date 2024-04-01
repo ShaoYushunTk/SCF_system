@@ -1,5 +1,6 @@
 package com.example.dto;
 
+import com.example.constant.CompanyType;
 import com.example.entity.CompanyAsset;
 import lombok.Data;
 
@@ -10,4 +11,5 @@ import lombok.Data;
 @Data
 public class CompanyAssetDto extends CompanyAsset {
     private String companyName;
+    private CompanyType companyType;
 }

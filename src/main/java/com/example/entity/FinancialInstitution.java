@@ -17,6 +17,6 @@ import java.util.Map;
 @TableName(autoResultMap = true)
 public class FinancialInstitution extends Company {
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private Map<String, BigDecimal> loanInterestRate;
+    private Map<String, Double> loanInterestRate;
     private String enterpriseIndustry;
 }

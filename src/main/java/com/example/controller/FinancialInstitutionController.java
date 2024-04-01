@@ -24,5 +24,13 @@ public class FinancialInstitutionController {
         return financialInstitutionService.getFinancialInstitutionList();
     }
 
+    @GetMapping("/page")
+    public Result page(
+            int page,
+            int pageSize,
+            String name
+    ) {
+        return financialInstitutionService.page(page, pageSize, name);
+    }
 
 }

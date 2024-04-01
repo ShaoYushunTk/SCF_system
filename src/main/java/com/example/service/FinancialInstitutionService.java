@@ -1,5 +1,7 @@
 package com.example.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.common.Result;
 import com.example.entity.CoreEnterprise;
@@ -19,4 +21,6 @@ public interface FinancialInstitutionService extends IService<FinancialInstituti
     Result getFinancialInstitutionList();
 
     Boolean removeByCompanyId(String id);
+
+    Result page(int page, int pageSize, String name);
 }

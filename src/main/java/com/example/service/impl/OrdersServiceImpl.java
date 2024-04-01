@@ -147,7 +147,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrderMapper, Orders> implemen
         queryWrapper.eq(Orders::getId, id);
         Orders order = this.getOne(queryWrapper);
         if (order == null) {
-            return Result.error("订单不存在");
+            throw new CommonException("订单不存在");
         }
 
         // 更新订单状态
@@ -174,5 +174,17 @@ public class OrdersServiceImpl extends ServiceImpl<OrderMapper, Orders> implemen
                 .or()
                 .eq(Orders::getReceiver, companyId);
         return Result.success(this.remove(lambdaQueryWrapper));
+    }
+
+    @Override
+    public Result deleteById(String id) {
+        Orders byId = this.getById(id);
+        if (byId == null) {
+            throw new CommonException("订单不存在");
+        }
+        if (byId.getOrderStatus() != OrderStatus.COMPLETED) {
+            throw new CommonException("订单未完成，无法删除");
+        }
+        return Result.success(this.removeById(id));
     }
 }

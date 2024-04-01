@@ -17,7 +17,9 @@ public interface CoreEnterpriseService extends IService<CoreEnterprise> {
 
     Result saveCreditRating(String id, String creditRating);
 
-    Result getCreditRatingList(String creditRating);
+    Result getCreditRatingPage(int page, int pageSize, String name, String creditRating);
 
     Boolean removeByCompanyId(String id);
+
+    Result page(int page, int pageSize, String name, String creditRating);
 }

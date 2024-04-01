@@ -1,17 +1,30 @@
 package com.example.service.impl;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.common.Result;
+import com.example.entity.Company;
 import com.example.entity.CoreEnterprise;
 import com.example.entity.FinancialInstitution;
 import com.example.exception.CommonException;
 import com.example.mapper.CoreEnterpriseMapper;
 import com.example.mapper.FinancialInstitutionMapper;
+import com.example.service.CompanyService;
 import com.example.service.FinancialInstitutionService;
+import com.example.utils.CommonUtils;
+import org.apache.commons.lang.StringUtils;
+import org.checkerframework.checker.units.qual.A;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author Yushun Shao
@@ -21,6 +34,13 @@ import org.springframework.stereotype.Service;
 public class FinancialInstitutionServiceImpl extends ServiceImpl<FinancialInstitutionMapper, FinancialInstitution> implements FinancialInstitutionService {
     @Autowired
     private FinancialInstitutionMapper financialInstitutionMapper;
+
+    @Autowired
+    private CompanyService companyService;
+
+    @Autowired
+    private CommonUtils commonUtils;
+
     @Override
     public FinancialInstitution getById(String id) {
         QueryWrapper<FinancialInstitution> queryWrapper = new QueryWrapper<>();
@@ -58,5 +78,28 @@ public class FinancialInstitutionServiceImpl extends ServiceImpl<FinancialInstit
             throw new CommonException("金融机构不存在");
         }
         return this.removeById(id);
+    }
+
+    @Override
+    public Result page(
+            int page,
+            int pageSize,
+            String name
+    ) {
+        Page<FinancialInstitution> financialInstitutionPage = new Page<>(page, pageSize);
+        commonUtils.customPage(financialInstitutionPage, new LambdaQueryWrapper<FinancialInstitution>(), this.entityClass, this.getClass());
+
+        List<FinancialInstitution> records = financialInstitutionPage.getRecords().stream().peek((it) -> {
+            Company company = companyService.getById(it.getId());
+            BeanUtils.copyProperties(company, it);
+        }).toList();
+
+        if (StringUtils.isNotEmpty(name)) {
+            String regex = ".*" + Pattern.quote(name) + ".*";
+            records = records.stream().filter(dto -> dto.getName().matches(regex)).collect(Collectors.toList());
+        }
+        financialInstitutionPage.setRecords(records);
+        financialInstitutionPage.setTotal(records.size());
+        return Result.success(financialInstitutionPage);
     }
 }

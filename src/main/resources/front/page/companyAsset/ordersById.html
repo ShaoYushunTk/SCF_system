@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/common.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+</head>
+<body>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../js/index.js"></script>
+    <script src="../../api/companyAsset.js"></script>
+    <script src="../../api/financingInfo.js"></script>
+    <script src="../../api/orders.js"></script>
+    <div class="dashboard-container" id="ordersById-app">
+        <div class="container">
+            <!--<el-table :data="tableData" stripe class="tableBox">
+                <el-table-column
+                        v-for="(value, key) in tableData[0]"
+                        :key="key"
+                        :prop="key"
+                        :label="labels[key]"
+                        v-if="['companyName', 'financialInstitutionName', 'applyTime', 'account', 'financingType', 'approvalStatus', 'approvalTime'].includes(key)"
+                />
+            </el-table>-->
+            <el-table :data="tableData" stripe class="tableBox">
+                <el-table-column prop="payerName" label="支付方"></el-table-column>
+                <el-table-column prop="receiverName" label="收款方"></el-table-column>
+                <el-table-column prop="receiverPhone" label="收款方联系电话"></el-table-column>
+                <el-table-column prop="receiverAddress" label="收款方联系地址"></el-table-column>
+                <el-table-column prop="logisticProviderName" label="物流公司"></el-table-column>
+                <el-table-column prop="amount" label="订单总金额"></el-table-column>
+                <el-table-column prop="orderStatus" label="订单状态" :formatter="formatOrderStatus"></el-table-column>
+                <el-table-column prop="orderTime" label="下单时间" width="150">
+                    <template slot-scope="scope">
+                        {{scope.row.orderTime | formatLocalDateTime}}
+                    </template>
+                </el-table-column>
+            </el-table>
+            <el-pagination
+                    class="pageList"
+                    :page-sizes="[10, 20, 30, 40]"
+                    :page-size="pageSize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="counts"
+                    :current-page.sync="page"
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+            ></el-pagination>
+        </div>
+    </div>
+    <script>
+        Vue.filter('formatLocalDateTime', function(value) {
+            const [year, month, day, hour, minute, second] = value;
+            return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
+        });
+        new Vue({
+            el: '#ordersById-app',
+            data() {
+                return {
+                    companyId: '',
+                    companyType: '',
+                    tableData: '',
+                    counts: 0,
+                    page: 1,
+                    pageSize: 10,
+                }
+            },
+            computed: {},
+            created() {
+                this.companyId = requestUrlParam('companyId')
+                this.companyType = requestUrlParam('companyType')
+                console.log(this.companyId)
+                console.log(this.companyType)
+                if (this.companyId) {
+                    this.page = 1;
+                    this.init()
+                }
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const params = {
+                        page: this.page,
+                        pageSize: this.pageSize,
+                    }
+                    await getOrdersByCompanyId(this.companyId, params).then(res => {
+                        if (String(res.code) === '1') {
+                            this.tableData = res.data.records || []
+                            this.counts = res.data.total
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+                },
+                formatOrderStatus (row, column) {
+                    const orderStatusMap = {
+                        UNPAID: '待支付',
+                        PAID: '已支付',
+                        UNDELIVERED: '待发货',
+                        DELIVERED: '已发货',
+                        COMPLETED: '已完成',
+                        // 添加更多类型的映射关系
+                    };
+                    return orderStatusMap[row.orderStatus] || '';
+                },
+                handleSizeChange (val) {
+                    this.pageSize = val
+                    this.init()
+                },
+                handleCurrentChange (val) {
+                    this.page = val
+                    this.init()
+                },
+                goBack(){
+                    if (this.companyType === 'CORE_ENTERPRISE') {
+                        window.parent.menuHandle({
+                            id: '2',
+                            url: '/front/page/companyAsset/list_CE.html',
+                            name: '企业资金管理'
+                        },false)
+                    } else {
+                        window.parent.menuHandle({
+                            id: '2',
+                            url: '/front/page/companyAsset/list_SME.html',
+                            name: '企业资金管理'
+                        },false)
+                    }
+                }
+            }
+        })
+    </script>
+</body>
+</html>

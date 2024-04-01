@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/common.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+</head>
+<body>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../api/financingInfo.js"></script>
+    <div class="dashboard-container" id="financingInfoApproval-app">
+        <div class="container">
+            <div class="tableBar">
+                <el-input
+                        v-model="input"
+                        placeholder="请输入融资企业名称"
+                        style="width: 250px"
+                        clearable
+                        @keyup.enter.native="handleQuery"
+                >
+                </el-input>
+                <el-select v-model="inputApprovalStatus" placeholder="请选择审批状态">
+                    <el-option label="请选择审批状态" value=""></el-option>
+                    <el-option label="待审批" value="PENDING"></el-option>
+                    <el-option label="审批通过" value="APPROVE"></el-option>
+                    <el-option label="审批拒绝" value="REJECT"></el-option>
+                </el-select>
+                <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
+            </div>
+            <el-table :data="tableData" stripe class="tableBox">
+                <el-table-column prop="companyName" label="融资企业名称"></el-table-column>
+                <el-table-column prop="financialInstitutionName" label="金融机构名称"></el-table-column>
+                <el-table-column prop="applyTime" label="申请时间" width="150">
+                    <template slot-scope="scope">
+                        {{scope.row.applyTime | formatLocalDateTime}}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="account" label="融资金额"></el-table-column>
+                <el-table-column prop="financingType" label="融资类型" :formatter="formatFinancingType"></el-table-column>
+                <el-table-column prop="approvalStatus" label="审批状态" :formatter="formatApprovalStatus"></el-table-column>
+                <el-table-column prop="approvalTime" label="审批时间" width="150">
+                    <template slot-scope="scope">
+                        {{scope.row.approvalTime | formatLocalDateTime}}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="approvalComment" label="审批备注"></el-table-column>
+                <el-table-column label="操作" width="160" align="center">
+                    <template slot-scope="scope">
+                        <el-button
+                                type="text"
+                                size="small"
+                                class="blueBug"
+                                style="color: #333333 !important; background-color: transparent !important; border-color: transparent !important;"
+                                @click="getFinancingInfoDetail(scope.row.id)"
+                        >
+                            详情
+                        </el-button>
+                        <el-button
+                                type="text"
+                                size="small"
+                                class="delBut non"
+                                style="color: red !important; background-color: transparent !important; border-color: transparent !important;"
+                                @click="deleteFinancingInfo(scope.row.id)"
+                        >
+                            删除
+                        </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <el-pagination
+                    class="pageList"
+                    :page-sizes="[10, 20, 30, 40]"
+                    :page-size="pageSize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="counts"
+                    :current-page.sync="page"
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+            ></el-pagination>
+        </div>
+    </div>
+    <script>
+        Vue.filter('formatLocalDateTime', function(value) {
+            const [year, month, day, hour, minute, second] = value;
+            return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
+        });
+        new Vue({
+            el: '#financingInfoApproval-app',
+            data() {
+                return {
+                    input: '',
+                    inputApprovalStatus: '',
+                    counts: 0,
+                    page: 1,
+                    pageSize: 10,
+                    tableData : [],
+                    id : '',
+                }
+            },
+            computed: {},
+            created() {
+                this.init()
+                this.user = JSON.parse(localStorage.getItem('empInfo')).username
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const params = {
+                        page: this.page,
+                        pageSize: this.pageSize,
+                        companyName: this.input ? this.input : undefined,
+                        approvalStatus: this.inputApprovalStatus ? this.inputApprovalStatus : undefined,
+                    }
+                    console.log(params)
+                    await getFinancingInfoPage(params).then(res => {
+                        if (String(res.code) === '1') {
+                            this.tableData = res.data.records || []
+                            this.counts = res.data.total
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+                },
+                handleQuery() {
+                    this.page = 1;
+                    this.init();
+                },
+                // 添加
+                getFinancingInfoDetail (st) {
+                    window.parent.menuHandle({
+                        id: '2',
+                        url: '/front/page/financingInfo/detail.html?id='+encodeURIComponent(st),
+                        name: '融资信息详情'
+                    },true)
+                },
+                deleteFinancingInfo (id) {
+                    this.id = encodeURIComponent(id)
+                    console.log(this.id)
+                    this.$confirm('确认删除融资信息?', '提示', {
+                        'confirmButtonText': '确定',
+                        'cancelButtonText': '取消',
+                        'type': 'warning'
+                    }).then(() => {
+                        deleteFinancingInfoById(this.id).then(results => {
+                            if (results.every(res => res.code === 1)) {
+                                this.$message.success('融资信息删除成功');
+                                this.handleQuery();
+                            } else {
+                                this.$message.error('融资信息删除失败');
+                                this.handleQuery();
+                            }
+                        }).catch(err => {
+                            console.error('请求发生错误', err);
+                        });
+                    })
+                },
+                formatFinancingType (row, column) {
+                    const financingTypeMap = {
+                        ACCOUNTS_RECEIVABLE: '应收账款融资',
+                        PURCHASE_ORDER: '采购订单融资',
+                        SUPPLY_CHAIN: '供应链融资',
+                        // 添加更多类型的映射关系
+                    };
+                    return financingTypeMap[row.financingType] || '';
+                },
+                formatApprovalStatus (row, column) {
+                    const approvalTypeMap = {
+                        PENDING: '待审批',
+                        APPROVE: '审批通过',
+                        REJECT: '审批拒绝',
+                        // 添加更多类型的映射关系
+                    };
+                    return approvalTypeMap[row.approvalStatus] || '';
+                },
+                handleSizeChange (val) {
+                    this.pageSize = val
+                    this.init()
+                },
+                handleCurrentChange (val) {
+                    this.page = val
+                    this.init()
+                }
+            }
+        })
+    </script>
+</body>
+</html>

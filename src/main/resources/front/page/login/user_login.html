@@ -104,21 +104,18 @@
                         const res = await userLoginApi({phone:this.loginForm.phone, code:this.loginForm.code})
                         this.loading = false
                         if(res.code === 1){
-                            sessionStorage.setItem("userId",this.loginForm.phone)
-                            sessionStorage.setItem("userCode",this.loginForm.code)
+                            sessionStorage.setItem("userInfo", this.loginForm)
                             sessionStorage.setItem("companyType", res.data.companyType)
                             window.requestAnimationFrame(()=>{
                                 let companyType = res.data.companyType;
-                                if (companyType === 'SYSTEM_ADMIN') {
-                                    window.location.href = '../index/SA_index.html';
-                                } else if (companyType === 'SMEs') {
-                                    window.location.href = '../index/SMEs_index.html';
+                                if (companyType === 'SMEs') {
+                                    window.location.href = '../index/user/SMEs_index.html';
                                 } else if (companyType === 'CORE_ENTERPRISE') {
-                                    window.location.href = '../index/CE_index.html';
+                                    window.location.href = '../index/user/CE_index.html';
                                 } else if (companyType === 'FINANCIAL_INSTITUTION') {
-                                    window.location.href = '../index/FI_index.html';
+                                    window.location.href = '../index/user/FI_index.html';
                                 } else if (companyType === 'LOGISTICS_COMPANY') {
-                                    window.location.href = '../index/LC_index.html';
+                                    window.location.href = '../index/user/LC_index.html';
                                 } else {
                                     window.location.href = '../../index.html';
                                 }

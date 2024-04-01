@@ -27,11 +27,23 @@ public class CoreEnterpriseController {
         return coreEnterpriseService.saveCreditRating(id, creditRating);
     }
 
-    @GetMapping("/creditRatingList")
-    public Result getCreditRatingList(
-            @RequestParam
+    @GetMapping("/creditRatingPage")
+    public Result getCreditRatingPage(
+            int page,
+            int pageSize,
+            String name,
             String creditRating
     ) {
-        return coreEnterpriseService.getCreditRatingList(creditRating);
+        return coreEnterpriseService.getCreditRatingPage(page, pageSize, name, creditRating);
+    }
+
+    @GetMapping("/page")
+    public Result page(
+            int page,
+            int pageSize,
+            String name,
+            String creditRating
+    ) {
+        return coreEnterpriseService.page(page, pageSize, name, creditRating);
     }
 }

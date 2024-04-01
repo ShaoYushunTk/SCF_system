@@ -14,4 +14,6 @@ public interface LogisticsProviderService extends IService<LogisticsProvider> {
     Result updateByDto(LogisticsProvider logisticsProvider, String id);
 
     Boolean removeByCompanyId(String id);
+
+    Result page(int page, int pageSize, String name);
 }

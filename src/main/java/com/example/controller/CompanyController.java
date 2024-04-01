@@ -50,26 +50,21 @@ public class CompanyController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private RedisTemplate redisTemplate;
-
     /**
      * 获取详细信息
      * @param id
-     * @param companyType
      * @return
      */
     @GetMapping("/{id}")
     public Result<? extends Company> findById(
             @PathVariable
-            String id,
-            CompanyType companyType
+            String id
     ) {
         Company company = companyService.getById(id);
         if (company == null) {
-            return Result.error("Company not found");
+            throw new CommonException("企业不存在");
         }
-        return switch (companyType) {
+        return switch (company.getCompanyType()) {
             case SMEs -> {
                 SmallMiddleEnterprise byId = smallMiddleEnterpriseService.getById(id);
                 BeanUtils.copyProperties(company, byId);
@@ -90,7 +85,7 @@ public class CompanyController {
                 BeanUtils.copyProperties(company, byId);
                 yield Result.success(byId);
             }
-            default -> Result.error("Unsupported company type");
+            default -> Result.error("不支持的企业类型");
         };
     }
 
@@ -105,7 +100,7 @@ public class CompanyController {
         lambdaQueryWrapper.eq(Company::getName, company.getName());
         Company one = companyService.getOne(lambdaQueryWrapper);
         if (one != null) {
-            return Result.error("当前类型下已存在同名企业");
+            throw new CommonException("当前类型下已存在同名企业");
         }
 
         company.setId(UUIDUtils.generate());
@@ -143,13 +138,13 @@ public class CompanyController {
                 financialInstitution.setId(company.getId());
                 financialInstitutionService.save(financialInstitution);
             }
-            default -> Result.error("Unsupported company type");
+            default -> Result.error("不支持的企业类型");
         };
         return Result.success("企业新建成功");
     }
 
-    @PostMapping("/{id}/update")
-    public Result update(
+    @PostMapping("/{id}/updateDetail")
+    public Result updateDetail(
             @PathVariable
             String id,
             @RequestBody
@@ -157,15 +152,31 @@ public class CompanyController {
     ) {
         Company company = companyService.getById(id);
         if (company == null) {
-            return Result.error("Company not found");
+            throw new CommonException("企业不存在");
         }
         return switch (company.getCompanyType()) {
             case SMEs -> smallMiddleEnterpriseService.updateByDto(companyUpdateDto.getSmallMiddleEnterprise(), id);
             case CORE_ENTERPRISE -> coreEnterpriseService.updateByDto(companyUpdateDto.getCoreEnterprise(), id);
             case LOGISTICS_COMPANY -> logisticsProviderService.updateByDto(companyUpdateDto.getLogisticsProvider(), id);
             case FINANCIAL_INSTITUTION -> financialInstitutionService.updateByDto(companyUpdateDto.getFinancialInstitution(), id);
-            default -> Result.error("Unsupported company type");
+            default -> Result.error("不支持的企业类型");
         };
+    }
+
+    @PostMapping("/{id}/updateBasic")
+    public Result updateBasic(
+            @PathVariable
+            String id,
+            @RequestBody
+            Company company
+    ) {
+        Company byId = companyService.getById(id);
+        if (byId == null) {
+            throw new CommonException("企业不存在");
+        }
+        company.setId(id);
+        companyService.updateById(company);
+        return Result.success("企业基本信息更新成功");
     }
 
     @PostMapping("/{id}/delete")
@@ -175,14 +186,14 @@ public class CompanyController {
     ) {
         Company company = companyService.getById(id);
         if (company == null) {
-            return Result.error("Company not found");
+            throw new CommonException("企业不存在");
         }
         // 查看当前企业是否存在用户，若存在不可删除
         LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(User::getCompanyId, id);
         User user = userService.getOne(lambdaQueryWrapper);
         if (user != null) {
-            return Result.error("Company has users, cannot be deleted");
+            throw new CommonException("当前企业存在用户，不可删除");
         }
         // 根据企业类型删除对应表
         // 删除资金流水表和订单表（前端发请求）
@@ -200,13 +211,13 @@ public class CompanyController {
             case CORE_ENTERPRISE -> {
                 coreEnterpriseService.removeByCompanyId(id);
             }
-            default -> throw new CommonException("Unsupported company type");
+            default -> throw new CommonException("不支持的企业类型");
         };
 
         // 删除资产表
         companyAssetService.removeByCompanyId(id);
         companyService.removeById(id);
-        return Result.success("deleted successfully");
+        return Result.success("删除成功");
     }
 
 
@@ -214,12 +225,14 @@ public class CompanyController {
     public Result<Page<Company>> page(
             int page,
             int pageSize,
-            CompanyType companyType
+            String name,
+            String companyType
     ) {
         Page<Company> pageInfo = new Page<>(page, pageSize);
 
         LambdaQueryWrapper<Company> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(StringUtils.isNotEmpty(companyType.toString()), Company::getCompanyType, companyType);
+        lambdaQueryWrapper.like(StringUtils.isNotEmpty(name), Company::getName, name);
+        lambdaQueryWrapper.eq(StringUtils.isNotEmpty(companyType), Company::getCompanyType, companyType);
 
         companyService.page(pageInfo, lambdaQueryWrapper);
         return Result.success(pageInfo);
@@ -229,16 +242,9 @@ public class CompanyController {
     public Result list(
             CompanyType companyType
     ) {
-        String redisKey = "Company" + "_" + companyType.toString() + "_" + "List";
-        List<Company> list = (List<Company>) redisTemplate.opsForValue().get(redisKey);
-        if (list != null) {
-            return Result.success(list);
-        }
-
         LambdaQueryWrapper<Company> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(StringUtils.isNotEmpty(companyType.toString()), Company::getCompanyType, companyType);
         List<Company> companyList = companyService.list(lambdaQueryWrapper);
-        redisTemplate.opsForValue().set(redisKey, companyList, 60, TimeUnit.MINUTES);
         return Result.success(companyList);
     }
 }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.common.Result;
 import com.example.constant.TradingType;
+import com.example.dto.FundFlowDto;
 import com.example.entity.FundFlow;
 import com.example.entity.User;
 import com.example.service.FundFlowService;
@@ -37,16 +38,10 @@ public class FundFlowController {
     public Result page(
             int page,
             int pageSize,
-            TradingType tradingType,
-            String companyId
+            String tradingType,
+            String name
     ) {
-        Page<FundFlow> pageInfo = new Page<>(page, pageSize);
-        LambdaQueryWrapper<FundFlow> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.and(i -> i.eq(StringUtils.isNotEmpty(companyId), FundFlow::getPayer, companyId)
-                        .or()
-                        .eq(StringUtils.isNotEmpty(companyId), FundFlow::getReceiver, companyId))
-                .eq(tradingType != null, FundFlow::getTradingType, tradingType);
-        return Result.success(fundFlowService.page(pageInfo, queryWrapper));
+        return fundFlowService.page(page, pageSize, tradingType, name);
     }
 
     @PostMapping("/delete/{companyId}")

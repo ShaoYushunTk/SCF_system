@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/common.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+</head>
+<body>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../api/orders.js"></script>
+    <div class="dashboard-container" id="orders-app">
+        <div class="container">
+            <div class="tableBar">
+                <el-input
+                        v-model="input"
+                        placeholder="请输入交易企业名称"
+                        style="width: 250px"
+                        clearable
+                        @keyup.enter.native="handleQuery"
+                >
+                </el-input>
+                <el-select v-model="inputOrderStatus" placeholder="请选择订单状态">
+                    <el-option label="请选择订单状态" value=""></el-option>
+                    <el-option label="待支付" value="UNPAID"></el-option>
+                    <el-option label="已支付" value="PAID"></el-option>
+                    <el-option label="待发货" value="UNDELIVERED"></el-option>
+                    <el-option label="已发货" value="DELIVERED"></el-option>
+                    <el-option label="已完成" value="COMPLETED"></el-option>
+                </el-select>
+                <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
+            </div>
+            <el-table :data="tableData" stripe class="tableBox">
+                <el-table-column prop="payerName" label="支付方"></el-table-column>
+                <el-table-column prop="receiverName" label="收款方"></el-table-column>
+                <el-table-column prop="receiverPhone" label="收款方联系电话"></el-table-column>
+                <el-table-column prop="receiverAddress" label="收款方联系地址"></el-table-column>
+                <el-table-column prop="logisticProviderName" label="物流公司"></el-table-column>
+                <el-table-column prop="amount" label="订单总金额"></el-table-column>
+                <el-table-column prop="orderStatus" label="订单状态" :formatter="formatOrderStatus"></el-table-column>
+                <el-table-column prop="orderTime" label="下单时间" width="150">
+                    <template slot-scope="scope">
+                        {{scope.row.orderTime | formatLocalDateTime}}
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作" width="160" align="center">
+                    <template slot-scope="scope">
+                        <el-button
+                                type="text"
+                                size="small"
+                                class="blueBug"
+                                style="color: #333333 !important; background-color: transparent !important; border-color: transparent !important;"
+                                @click="getOrderDetail(scope.row.id)"
+                        >
+                            详情
+                        </el-button>
+                        <el-button
+                                type="text"
+                                size="small"
+                                class="delBut non"
+                                style="color: red !important; background-color: transparent !important; border-color: transparent !important;"
+                                @click="deleteOrder(scope.row.id)"
+                        >
+                            删除
+                        </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <el-pagination
+                    class="pageList"
+                    :page-sizes="[10, 20, 30, 40]"
+                    :page-size="pageSize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="counts"
+                    :current-page.sync="page"
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+            ></el-pagination>
+        </div>
+    </div>
+    <script>
+        Vue.filter('formatLocalDateTime', function(value) {
+            const [year, month, day, hour, minute, second] = value;
+            return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
+        });
+        new Vue({
+            el: '#orders-app',
+            data() {
+                return {
+                    input: '',
+                    inputOrderStatus: '',
+                    counts: 0,
+                    page: 1,
+                    pageSize: 10,
+                    tableData : [],
+                    id : '',
+                }
+            },
+            computed: {},
+            created() {
+                this.init()
+                this.user = JSON.parse(localStorage.getItem('empInfo')).username
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const params = {
+                        page: this.page,
+                        pageSize: this.pageSize,
+                        companyName: this.input ? this.input : undefined,
+                        orderStatus: this.inputOrderStatus ? this.inputOrderStatus : undefined
+                    }
+                    console.log(params)
+                    await getOrdersPage(params).then(res => {
+                        if (String(res.code) === '1') {
+                            this.tableData = res.data.records || []
+                            this.counts = res.data.total
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+                },
+                handleQuery() {
+                    this.page = 1;
+                    this.init();
+                },
+                deleteOrder (id) {
+                    this.id = encodeURIComponent(id)
+                    console.log(this.id)
+                    this.$confirm('确认删除订单?', '提示', {
+                        'confirmButtonText': '确定',
+                        'cancelButtonText': '取消',
+                        'type': 'warning'
+                    }).then(() => {
+                            deleteOrdersById(this.id).then(res => {
+                            if (res.code === 1) {
+                                this.$message.success('订单删除成功');
+                                this.handleQuery();
+                            } else {
+                                this.$message.error(res.msg);
+                                this.handleQuery();
+                            }
+                        }).catch(err => {
+                            console.error('请求发生错误', err);
+                        });
+                    })
+                },
+                getOrderDetail(id) {
+                    window.parent.menuHandle({
+                        id: '2',
+                        url: '/backend/page/order/detail.html?id='+encodeURIComponent(id),
+                        name: '订单详情'
+                    },true)
+                },
+                formatOrderStatus (row, column) {
+                    const orderStatusMap = {
+                        UNPAID: '待支付',
+                        PAID: '已支付',
+                        UNDELIVERED: '待发货',
+                        DELIVERED: '已发货',
+                        COMPLETED: '已完成',
+                        // 添加更多类型的映射关系
+                    };
+                    return orderStatusMap[row.orderStatus] || '';
+                },
+                handleSizeChange (val) {
+                    this.pageSize = val
+                    this.init()
+                },
+                handleCurrentChange (val) {
+                    this.page = val
+                    this.init()
+                }
+            }
+        })
+    </script>
+</body>
+</html>

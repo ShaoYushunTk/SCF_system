@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/common.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+</head>
+<body>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../js/index.js"></script>
+    <script src="../../api/companyAsset.js"></script>
+    <script src="../../api/financingInfo.js"></script>
+    <div class="dashboard-container" id="financingInfoListById-app">
+        <div class="container">
+            <!--<el-table :data="tableData" stripe class="tableBox">
+                <el-table-column
+                        v-for="(value, key) in tableData[0]"
+                        :key="key"
+                        :prop="key"
+                        :label="labels[key]"
+                        v-if="['companyName', 'financialInstitutionName', 'applyTime', 'account', 'financingType', 'approvalStatus', 'approvalTime'].includes(key)"
+                />
+            </el-table>-->
+            <el-table :data="tableData" stripe class="tableBox">
+                <el-table-column prop="companyName" label="融资企业名称"></el-table-column>
+                <el-table-column prop="financialInstitutionName" label="金融机构名称"></el-table-column>
+                <el-table-column prop="applyTime" label="申请时间" width="150">
+                    <template slot-scope="scope">
+                        {{scope.row.applyTime | formatLocalDateTime}}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="account" label="融资金额"></el-table-column>
+                <el-table-column prop="financingType" label="融资类型" :formatter="formatFinancingType"></el-table-column>
+                <el-table-column prop="approvalStatus" label="审批状态" :formatter="formatApprovalStatus"></el-table-column>
+                <el-table-column prop="approvalTime" label="审批时间" width="150">
+                    <template slot-scope="scope">
+                        {{scope.row.approvalTime | formatLocalDateTime}}
+                    </template>
+                </el-table-column>
+            </el-table>
+            <el-pagination
+                    class="pageList"
+                    :page-sizes="[10, 20, 30, 40]"
+                    :page-size="pageSize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="counts"
+                    :current-page.sync="page"
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+            ></el-pagination>
+        </div>
+    </div>
+    <script>
+        Vue.filter('formatLocalDateTime', function(value) {
+            const [year, month, day, hour, minute, second] = value;
+            return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
+        });
+        new Vue({
+            el: '#financingInfoListById-app',
+            data() {
+                return {
+                    companyId: '',
+                    companyType: '',
+                    tableData: '',
+                    counts: 0,
+                    page: 1,
+                    pageSize: 10,
+                    labels: {
+                        companyName: '融资企业名称',
+                        financialInstitutionName: '金融机构名称',
+                        applyTime: '申请时间',
+                        account: '融资金额',
+                        financingType: '融资类型',
+                        approvalStatus: '审批状态',
+                        approvalTime: '审批时间',
+                        // add more mappings here
+                    }
+                }
+            },
+            computed: {},
+            created() {
+                this.companyId = requestUrlParam('companyId')
+                this.companyType = requestUrlParam('companyType')
+                console.log(this.companyId)
+                console.log(this.companyType)
+                if (this.companyId) {
+                    this.page = 1;
+                    this.init()
+                }
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const params = {
+                        page: this.page,
+                        pageSize: this.pageSize,
+                    }
+                    await getFinancingInfoByCompanyId(this.companyId, params).then(res => {
+                        if (String(res.code) === '1') {
+                            this.tableData = res.data.records || []
+                            this.counts = res.data.total
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+                },
+                formatFinancingType (row, column) {
+                    const financingTypeMap = {
+                        ACCOUNTS_RECEIVABLE: '应收账款融资',
+                        PURCHASE_ORDER: '采购订单融资',
+                        SUPPLY_CHAIN: '供应链融资',
+                        // 添加更多类型的映射关系
+                    };
+                    return financingTypeMap[row.financingType] || '';
+                },
+                formatApprovalStatus (row, column) {
+                    const approvalTypeMap = {
+                        PENDING: '待审批',
+                        APPROVE: '审批通过',
+                        REJECT: '审批拒绝',
+                        // 添加更多类型的映射关系
+                    };
+                    return approvalTypeMap[row.approvalStatus] || '';
+                },
+                handleSizeChange (val) {
+                    this.pageSize = val
+                    this.init()
+                },
+                handleCurrentChange (val) {
+                    this.page = val
+                    this.init()
+                },
+                goBack(){
+                    if (this.companyType === 'CORE_ENTERPRISE') {
+                        window.parent.menuHandle({
+                            id: '2',
+                            url: '/front/page/companyAsset/list_CE.html',
+                            name: '企业资金管理'
+                        },false)
+                    } else {
+                        window.parent.menuHandle({
+                            id: '2',
+                            url: '/front/page/companyAsset/list_SME.html',
+                            name: '企业资金管理'
+                        },false)
+                    }
+                }
+            }
+        })
+    </script>
+</body>
+</html>

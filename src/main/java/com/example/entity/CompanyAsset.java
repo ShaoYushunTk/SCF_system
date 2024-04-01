@@ -1,19 +1,20 @@
 package com.example.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author Yushun Shao
  * @date 2024/3/11 16:35
  */
 @Data
+@TableName(autoResultMap = true)
 public class CompanyAsset implements Serializable {
     private static final long serialVersionUID = 1L;
     private String id;

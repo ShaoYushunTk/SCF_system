@@ -1,7 +1,6 @@
 package com.example.dto;
 
 import com.example.entity.CoreEnterprise;
-import com.example.entity.SmallMiddleEnterprise;
 import lombok.Data;
 
 import java.util.List;
@@ -12,5 +11,5 @@ import java.util.List;
  */
 @Data
 public class CoreEnterpriseCreditRatingDto extends CoreEnterprise {
-    private List<SmallMiddleEnterprise> smallMiddleEnterpriseList;
+    private List<String> smallMiddleEnterpriseNameList;
 }

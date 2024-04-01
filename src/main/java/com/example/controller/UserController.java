@@ -5,8 +5,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.common.Result;
 import com.example.constant.CompanyType;
 import com.example.dto.UserDto;
+import com.example.dto.UserRegisterDto;
 import com.example.entity.Company;
 import com.example.entity.User;
+import com.example.exception.CommonException;
 import com.example.properties.SmsProperties;
 import com.example.service.CompanyService;
 import com.example.service.UserService;
@@ -96,10 +98,10 @@ public class UserController {
             User user = userService.getOne(lambdaQueryWrapper);
 
             if (user == null) {
-                return Result.error("当前用户未注册");
+                throw new CommonException("当前用户未注册");
             }
             if (user.getIsValid() == 0) {
-                return Result.error("账号已禁用");
+                throw new CommonException("账号已禁用");
             }
 
             httpSession.setAttribute("user",user.getId());
@@ -122,36 +124,40 @@ public class UserController {
     @PostMapping("/register")
     public Result<Map> register(
             @RequestBody
-            User user
+            UserRegisterDto userRegisterDto
     ) {
-        log.info(user.toString());
+        log.info(userRegisterDto.toString());
 
         // 判断企业id是否存在
-        Company company = companyService.getById(user.getCompanyId());
+        LambdaQueryWrapper<Company> companyLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        companyLambdaQueryWrapper.eq(Company::getCompanyType, userRegisterDto.getCompanyType())
+                .eq(Company::getName, userRegisterDto.getCompanyName());
+        Company company = companyService.getOne(companyLambdaQueryWrapper);
         if (company == null) {
-            return Result.error("企业id不存在");
+            throw new CommonException("企业不存在");
         }
 
         // 判断手机号是否存在
         LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(User::getPhone,user.getPhone())
-                .eq(User::getCompanyId,user.getCompanyId());
+        lambdaQueryWrapper.eq(User::getPhone,userRegisterDto.getPhone())
+                .eq(User::getCompanyId,userRegisterDto.getCompanyId());
         User u = userService.getOne(lambdaQueryWrapper);
 
         if (u != null) {
-            return Result.error("当前企业下手机号已存在");
+            throw new CommonException("当前企业下手机号已存在");
         }
 
         // 注册
-        user.setId(UUIDUtils.generate());
-        user.setIsValid(1);
+        userRegisterDto.setId(UUIDUtils.generate());
+        userRegisterDto.setIsValid(1);
+        userRegisterDto.setCompanyId(company.getId());
+        User user = new User();
+        BeanUtils.copyProperties(userRegisterDto, user);
         userService.save(user);
 
-        CompanyType companyType = companyService.getById(user.getCompanyId()).getCompanyType();
-
-        Map <String, String> m = new HashMap<>();
-        m.put("id", user.getId());
-        m.put("companyType", companyType.toString());
+        Map <String, Object> m = new HashMap<>();
+        m.put("userInfo", user);
+        m.put("companyType", userRegisterDto.getCompanyType().toString());
         return Result.success(m);
     }
 
@@ -161,7 +167,7 @@ public class UserController {
             int pageSize,
             String name
     ) {
-        Page<User> pageInfo = new Page(page,pageSize);
+        Page<User> pageInfo = new Page<>(page,pageSize);
         Page<UserDto> userDtoPage = new Page<>(page,pageSize);
 
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
@@ -173,6 +179,9 @@ public class UserController {
         BeanUtils.copyProperties(pageInfo, userDtoPage, "records");
         List<UserDto> userDtoList = pageInfo.getRecords().stream().map((it) -> {
             UserDto userDto = new UserDto();
+            Company byId = companyService.getById(it.getCompanyId());
+            userDto.setCompanyName(byId.getName());
+            userDto.setCompanyType(byId.getCompanyType());
             BeanUtils.copyProperties(it, userDto);
             return userDto;
         }).collect(Collectors.toList());
@@ -186,12 +195,51 @@ public class UserController {
     public Result updateStatus(
             @PathVariable
             String id,
-            @RequestParam
+            @RequestParam("status")
             int status
     ) {
         User user = userService.getById(id);
         user.setIsValid(status);
+        userService.updateById(user);
+        return Result.success("更新成功");
+    }
+
+    @PostMapping("/save")
+    public Result save(
+            @RequestBody
+            User user
+    ) {
+        // 同名校验
+        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(User::getName, user.getName());
+        User one = userService.getOne(lambdaQueryWrapper);
+        if (one != null) {
+            throw new CommonException("当前用户名称已存在");
+        }
+        // 企业id校验
+        Company byId = companyService.getById(user.getCompanyId());
+        if (byId == null) {
+            throw new CommonException("企业不存在");
+        }
+        user.setId(UUIDUtils.generate());
+        user.setIsValid(1);
         userService.save(user);
+        return Result.success("保存成功");
+    }
+
+    @PostMapping("/{id}/update")
+    public Result update(
+            @PathVariable
+            String id,
+            @RequestBody
+            User user
+    ) {
+        User byId = userService.getById(id);
+        if (byId == null) {
+            throw new CommonException("用户不存在");
+        }
+        user.setId(id);
+        userService.updateById(user);
         return Result.success("更新成功");
     }
 

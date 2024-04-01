@@ -9,6 +9,7 @@ import com.example.entity.Company;
 import com.example.entity.CompanyAsset;
 import com.example.entity.FinancingInfo;
 import com.example.entity.Orders;
+import com.example.exception.CommonException;
 import com.example.mapper.CompanyAssetMapper;
 import com.example.service.CompanyAssetService;
 import com.example.service.CompanyService;
@@ -21,10 +22,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author Yushun Shao
@@ -40,31 +44,32 @@ public class CompanyAssetServiceImpl extends ServiceImpl<CompanyAssetMapper, Com
     public Result page(
             int page,
             int pageSize,
-            String companyId
+            String name,
+            String companyType
     ) {
-
         Page<CompanyAsset> companyAssetPage = new Page<>(page, pageSize);
         Page<CompanyAssetDto> companyAssetDtoPage = new Page<>(page, pageSize);
-        LambdaQueryWrapper<CompanyAsset> companyAssetLambdaQueryWrapper = new LambdaQueryWrapper<>();
-        companyAssetLambdaQueryWrapper.eq(StringUtils.isNotEmpty(companyId), CompanyAsset::getCompanyId, companyId);
-        this.page(companyAssetPage, companyAssetLambdaQueryWrapper);
+        this.page(companyAssetPage, new LambdaQueryWrapper<CompanyAsset>());
 
         BeanUtils.copyProperties(companyAssetPage, companyAssetDtoPage, "records");
-        List<String> idList = companyAssetPage.getRecords().stream().map(CompanyAsset::getCompanyId).toList();
-
-        List<Company> companyList = companyService.listByIds(idList);
-        Map<String, Company> companyMap = new HashMap<>();
-        for (Company entity : companyList) {
-            companyMap.put(String.valueOf(entity.getId()), entity);
-        }
-
-        companyAssetDtoPage.setRecords(companyAssetPage.getRecords().stream().map((it) -> {
+        List<CompanyAssetDto> records = companyAssetPage.getRecords().stream().map((it) -> {
             CompanyAssetDto companyAssetDto = new CompanyAssetDto();
             BeanUtils.copyProperties(it, companyAssetDto);
-            companyAssetDto.setCompanyName(companyMap.get(it.getCompanyId()).getName());
+            Company byId = companyService.getById(it.getCompanyId());
+            companyAssetDto.setCompanyName(byId.getName());
+            companyAssetDto.setCompanyType(byId.getCompanyType());
             return companyAssetDto;
-        }).toList());
+        }).toList();
 
+        if (StringUtils.isNotEmpty(name)) {
+            String regex = ".*" + Pattern.quote(name) + ".*";
+            records = records.stream().filter(dto -> dto.getCompanyName().matches(regex)).collect(Collectors.toList());
+        }
+        if (StringUtils.isNotEmpty(companyType)) {
+            records = records.stream().filter(dto -> dto.getCompanyType().toString().equals(companyType)).collect(Collectors.toList());
+        }
+        companyAssetDtoPage.setRecords(records);
+        companyAssetDtoPage.setTotal(records.size());
         return Result.success(companyAssetDtoPage);
     }
 
@@ -73,5 +78,30 @@ public class CompanyAssetServiceImpl extends ServiceImpl<CompanyAssetMapper, Com
         LambdaQueryWrapper<CompanyAsset> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(CompanyAsset::getCompanyId, id);
         this.remove(lambdaQueryWrapper);
+    }
+
+    @Override
+    public Result addCash(
+            String id,
+            BigDecimal addCash
+    ) {
+        CompanyAsset companyAsset = this.getById(id);
+        if (companyAsset == null) {
+            throw new CommonException("企业资产不存在");
+        }
+        BigDecimal cash = companyAsset.getCash();
+        cash = cash.add(addCash);
+        companyAsset.setCash(cash);
+        this.updateById(companyAsset);
+        return Result.success("企业资产增加成功");
+    }
+
+    @Override
+    public Result getCompanyAssetById(String id) {
+        CompanyAsset companyAsset = this.getById(id);
+        if (companyAsset == null) {
+            throw new CommonException("企业资产不存在");
+        }
+        return Result.success(companyAsset);
     }
 }

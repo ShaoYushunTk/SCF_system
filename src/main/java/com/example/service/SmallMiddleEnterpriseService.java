@@ -20,4 +20,6 @@ public interface SmallMiddleEnterpriseService extends IService<SmallMiddleEnterp
     Result updateByDto(SmallMiddleEnterprise smallMiddleEnterprise, String id);
 
     boolean removeByCompanyId(String id);
+
+    Result page(int page, int pageSize, String name, String coreEnterpriseName);
 }

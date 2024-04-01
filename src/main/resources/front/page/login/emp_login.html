@@ -104,7 +104,7 @@
                             try {
                                 let res = await loginApi(this.loginForm);
                                 if (String(res.code) === '1') {
-                                    localStorage.setItem('userInfo', JSON.stringify(res.data));
+                                    localStorage.setItem('empInfo', JSON.stringify(res.data));
                                     // 在请求成功后进行页面跳转
                                     let companyType = res.data.companyType;
                                     if (companyType === 'SYSTEM_ADMIN') {

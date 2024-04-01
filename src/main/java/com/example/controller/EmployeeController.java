@@ -98,23 +98,15 @@ public class EmployeeController {
     }
 
     @GetMapping("/page")
-    public Result<Page<EmployeeDto>> page(int page, int pageSize, String name, CompanyType companyType) {
+    public Result<Page<Employee>> page(int page, int pageSize, String name, CompanyType companyType) {
         Page<Employee> pageInfo = new Page<>(page, pageSize);
         LambdaQueryWrapper<Employee> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.like(StringUtils.isNotEmpty(name), Employee::getUsername, name);
-        queryWrapper.eq(companyType != null, Employee::getCompanyType, companyType);
-        queryWrapper.orderByDesc(Employee::getUpdatedTime);
+        queryWrapper.like(StringUtils.isNotEmpty(name), Employee::getUsername, name)
+                .eq(companyType != null, Employee::getCompanyType, companyType)
+                .orderByDesc(Employee::getUpdatedTime);
         employeeService.page(pageInfo, queryWrapper);
 
-        List<EmployeeDto> employeeDtos = pageInfo.getRecords().stream()
-                .map(employeeService::toDto).collect(Collectors.toList());
-
-
-        Page<EmployeeDto> employeeDtoPageInfo = new Page<>();
-        employeeDtoPageInfo.setRecords(employeeDtos);
-        employeeDtoPageInfo.setTotal(pageInfo.getTotal());
-
-        return Result.success(employeeDtoPageInfo);
+        return Result.success(pageInfo);
     }
 
 

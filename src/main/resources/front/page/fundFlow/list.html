@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/common.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+</head>
+<body>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../api/fundFlow.js"></script>
+    <div class="dashboard-container" id="fundFlow-app">
+        <div class="container">
+            <div class="tableBar">
+                <el-input
+                        v-model="input"
+                        placeholder="请输入企业名称"
+                        style="width: 250px"
+                        clearable
+                        @keyup.enter.native="handleQuery"
+                >
+                </el-input>
+                <el-select v-model="inputTradingType" placeholder="请选择交易类型">
+                    <el-option label="请选择交易类型" value=""></el-option>
+                    <el-option label="采购付款" value="PURCHASE_PAYMENT"></el-option>
+                    <el-option label="销售收款" value="SALE_RECEIPT"></el-option>
+                    <el-option label="融资放款" value="FINANCING_LOAN"></el-option>
+                    <el-option label="融资还款" value="FINANCING_REPAYMENT"></el-option>
+                </el-select>
+                <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
+            </div>
+            <el-table :data="tableData" stripe class="tableBox">
+                <el-table-column prop="payerName" label="付款方"></el-table-column>
+                <el-table-column prop="receiverName" label="收款方"></el-table-column>
+                <el-table-column prop="tradingType" label="交易类型" :formatter="formatTradingType"></el-table-column>
+                <el-table-column prop="tradingTime" label="交易时间">
+                    <template slot-scope="scope">
+                        {{scope.row.tradingTime | formatLocalDateTime}}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="account" label="交易金额"></el-table-column>
+            </el-table>
+            <el-pagination
+                    class="pageList"
+                    :page-sizes="[10, 20, 30, 40]"
+                    :page-size="pageSize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="counts"
+                    :current-page.sync="page"
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+            ></el-pagination>
+        </div>
+    </div>
+    <script>
+        Vue.filter('formatLocalDateTime', function(value) {
+            const [year, month, day, hour, minute, second] = value;
+            return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
+        });
+        new Vue({
+            el: '#fundFlow-app',
+            data() {
+                return {
+                    input: '',
+                    inputTradingType: '',
+                    counts: 0,
+                    page: 1,
+                    pageSize: 10,
+                    tableData : [],
+                    id : '',
+                }
+            },
+            computed: {},
+            created() {
+                this.init()
+                this.user = JSON.parse(localStorage.getItem('empInfo')).username
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const params = {
+                        page: this.page,
+                        pageSize: this.pageSize,
+                        name: this.input ? this.input : undefined,
+                        tradingType: this.inputTradingType ? this.inputTradingType : undefined
+                    }
+                    console.log(params)
+                    await getFundFlowPage(params).then(res => {
+                        if (String(res.code) === '1') {
+                            this.tableData = res.data.records || []
+                            this.counts = res.data.total
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+                },
+                handleQuery() {
+                    this.page = 1;
+                    this.init();
+                },
+                formatTradingType(row, column) {
+                    const tradingTypeMap = {
+                        PURCHASE_PAYMENT: '采购付款',
+                        SALE_RECEIPT: '销售收款',
+                        FINANCING_LOAN: '融资放款',
+                        FINANCING_REPAYMENT: '融资还款',
+                        // 添加更多类型的映射关系
+                    };
+                    return tradingTypeMap[row.tradingType] || '';
+                },
+                formatTradingTime(row, column) {
+                    const [year, month, day, hour, minute, second] = row.tradingTime;
+                    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
+                },
+                handleSizeChange (val) {
+                    this.pageSize = val
+                    this.init()
+                },
+                handleCurrentChange (val) {
+                    this.page = val
+                    this.init()
+                }
+            }
+        })
+    </script>
+</body>
+</html>

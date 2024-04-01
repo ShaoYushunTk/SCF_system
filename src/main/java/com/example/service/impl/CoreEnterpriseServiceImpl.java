@@ -2,23 +2,29 @@ package com.example.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.common.Result;
 import com.example.dto.CoreEnterpriseCreditRatingDto;
+import com.example.entity.Company;
 import com.example.entity.CoreEnterprise;
 import com.example.entity.SmallMiddleEnterprise;
 import com.example.exception.CommonException;
 import com.example.mapper.CoreEnterpriseMapper;
+import com.example.service.CompanyService;
 import com.example.service.CoreEnterpriseService;
 import com.example.service.SmallMiddleEnterpriseService;
+import com.example.utils.CommonUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author Yushun Shao
@@ -33,7 +39,13 @@ public class CoreEnterpriseServiceImpl extends ServiceImpl<CoreEnterpriseMapper,
     private SmallMiddleEnterpriseService smallMiddleEnterpriseService;
 
     @Autowired
+    private CompanyService companyService;
+
+    @Autowired
     private RedisTemplate redisTemplate;
+
+    @Autowired
+    private CommonUtils commonUtils;
 
     public CoreEnterprise getById(
             String id
@@ -88,25 +100,43 @@ public class CoreEnterpriseServiceImpl extends ServiceImpl<CoreEnterpriseMapper,
     }
 
     @Override
-    public Result getCreditRatingList(
+    public Result getCreditRatingPage(
+            int page,
+            int pageSize,
+            String name,
             String creditRating
     ) {
-        LambdaQueryWrapper<CoreEnterprise> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(StringUtils.isNotEmpty(creditRating), CoreEnterprise::getCreditRating, creditRating);
+        Page<CoreEnterprise> coreEnterprisePage = new Page<>(page, pageSize);
+        Page<CoreEnterpriseCreditRatingDto> dtoPage = new Page<>();
+        commonUtils.customPage(coreEnterprisePage, new LambdaQueryWrapper<CoreEnterprise>(), this.entityClass, this.getClass());
 
-        List<CoreEnterpriseCreditRatingDto> dtoList = this.list(lambdaQueryWrapper).stream().map((it) -> {
+        BeanUtils.copyProperties(coreEnterprisePage, dtoPage,  "records");
+        List<CoreEnterpriseCreditRatingDto> records = coreEnterprisePage.getRecords().stream().map((it) -> {
+            Company byId = companyService.getById(it.getId());
+            BeanUtils.copyProperties(byId, it);
             CoreEnterpriseCreditRatingDto dto = new CoreEnterpriseCreditRatingDto();
             BeanUtils.copyProperties(it, dto);
 
             LambdaQueryWrapper<SmallMiddleEnterprise> smallMiddleEnterpriseLambdaQueryWrapper = new LambdaQueryWrapper<>();
             smallMiddleEnterpriseLambdaQueryWrapper.eq(SmallMiddleEnterprise::getCoreEnterpriseId, it.getId());
-            List<SmallMiddleEnterprise> smallMiddleEnterpriseList = smallMiddleEnterpriseService.list(smallMiddleEnterpriseLambdaQueryWrapper);
-            dto.setSmallMiddleEnterpriseList(smallMiddleEnterpriseList);
+            dto.setSmallMiddleEnterpriseNameList(smallMiddleEnterpriseService.list(smallMiddleEnterpriseLambdaQueryWrapper).stream().map((sme) -> {
+                Company company = companyService.getById(sme.getId());
+                BeanUtils.copyProperties(company, sme);
+                return sme.getName();
+            }).toList());
 
             return dto;
         }).toList();
 
-        return Result.success(dtoList);
+        if (StringUtils.isNotEmpty(name)) {
+            String regex = ".*" + Pattern.quote(name) + ".*";
+            records = records.stream().filter(dto -> dto.getName().matches(regex)).collect(Collectors.toList());
+        }
+        if (StringUtils.isNotEmpty(creditRating)) {
+            records = records.stream().filter(dto -> dto.getCreditRating().equals(creditRating)).collect(Collectors.toList());
+        }
+        dtoPage.setRecords(records);
+        return Result.success(dtoPage);
     }
 
     @Override
@@ -119,5 +149,32 @@ public class CoreEnterpriseServiceImpl extends ServiceImpl<CoreEnterpriseMapper,
             throw new CommonException("当前核心企业已关联中小企业，无法删除");
         }
         return this.removeById(id);
+    }
+
+    @Override
+    public Result page(
+            int page,
+            int pageSize,
+            String name,
+            String creditRating
+    ) {
+        Page<CoreEnterprise> coreEnterprisePage = new Page<>(page, pageSize);
+        commonUtils.customPage(coreEnterprisePage, new LambdaQueryWrapper<CoreEnterprise>(), this.entityClass, this.getClass());
+
+        List<CoreEnterprise> records = coreEnterprisePage.getRecords().stream().peek((it) -> {
+            Company company = companyService.getById(it.getId());
+            BeanUtils.copyProperties(company, it);
+        }).toList();
+
+        if (StringUtils.isNotEmpty(name)) {
+            String regex = ".*" + Pattern.quote(name) + ".*";
+            records = records.stream().filter(dto -> dto.getName().matches(regex)).collect(Collectors.toList());
+        }
+        if (StringUtils.isNotEmpty(creditRating)) {
+            records = records.stream().filter(dto -> dto.getCreditRating().equals(creditRating)).collect(Collectors.toList());
+        }
+        coreEnterprisePage.setRecords(records);
+        coreEnterprisePage.setTotal(records.size());
+        return Result.success(coreEnterprisePage);
     }
 }

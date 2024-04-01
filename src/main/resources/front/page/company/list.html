@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/common.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+</head>
+<body>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../api/company.js"></script>
+    <script src="../../api/orders.js"></script>
+    <script src="../../api/financingInfo.js"></script>
+    <div class="dashboard-container" id="company-app">
+        <div class="container">
+            <div class="tableBar">
+                <el-input
+                        v-model="input"
+                        placeholder="请输入企业名称"
+                        style="width: 250px"
+                        clearable
+                        @keyup.enter.native="handleQuery"
+                >
+                </el-input>
+                <el-select v-model="inputCompanyType" placeholder="请选择企业类型">
+                    <el-option label="请选择企业类型" value=""></el-option>
+                    <el-option label="中小企业" value="SMEs"></el-option>
+                    <el-option label="核心企业" value="CORE_ENTERPRISE"></el-option>
+                    <el-option label="金融机构" value="FINANCIAL_INSTITUTION"></el-option>
+                    <el-option label="物流公司" value="LOGISTICS_COMPANY"></el-option>
+                </el-select>
+                <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
+                <el-button
+                        type="primary"
+                        @click="addCompanyHandle('add')"
+                >
+                    + 添加企业
+                </el-button>
+            </div>
+            <el-table :data="tableData" stripe class="tableBox">
+                <el-table-column prop="name" label="企业名称"></el-table-column>
+                <el-table-column prop="companyType" label="企业类型" :formatter="formatCompanyType"></el-table-column>
+                <el-table-column prop="contactInfo.phone" label="企业联系电话"></el-table-column>
+                <el-table-column prop="contactInfo.address" label="企业联系地址"></el-table-column>
+                <el-table-column prop="contactInfo.email" label="企业联系邮箱"></el-table-column>
+                <el-table-column label="操作" width="160" align="center">
+                    <template slot-scope="scope">
+                        <el-button
+                                type="text"
+                                size="small"
+                                class="blueBug"
+                                style="color: #333333 !important; background-color: transparent !important; border-color: transparent !important;"
+                                @click="getCompanyDetail(scope.row.id)"
+                        >
+                            详情
+                        </el-button>
+                        <el-button
+                                type="text"
+                                size="small"
+                                class="blueBug"
+                                style="color: #3a8ee6 !important; background-color: transparent !important; border-color: transparent !important;"
+                                @click="addCompanyHandle(scope.row.id)"
+                        >
+                            编辑
+                        </el-button>
+                        <el-button
+                                type="text"
+                                size="small"
+                                class="delBut non"
+                                style="color: red !important; background-color: transparent !important; border-color: transparent !important;"
+                                @click="deleteCompany(scope.row.id)"
+                        >
+                            删除
+                        </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <el-pagination
+                    class="pageList"
+                    :page-sizes="[10, 20, 30, 40]"
+                    :page-size="pageSize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="counts"
+                    :current-page.sync="page"
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+            ></el-pagination>
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: '#company-app',
+            data() {
+                return {
+                    input: '',
+                    inputCompanyType: '',
+                    counts: 0,
+                    page: 1,
+                    pageSize: 10,
+                    tableData : [],
+                    id : '',
+                }
+            },
+            computed: {},
+            created() {
+                this.init()
+                this.user = JSON.parse(localStorage.getItem('empInfo')).username
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const params = {
+                        page: this.page,
+                        pageSize: this.pageSize,
+                        name: this.input ? this.input : undefined,
+                        companyType: this.inputCompanyType ? this.inputCompanyType : undefined
+                    }
+                    console.log(params)
+                    await getCompanyPage(params).then(res => {
+                        if (String(res.code) === '1') {
+                            this.tableData = res.data.records || []
+                            this.counts = res.data.total
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+                },
+                handleQuery() {
+                    this.page = 1;
+                    this.init();
+                },
+                // 添加
+                addCompanyHandle (st) {
+                    if (st === 'add'){
+                        window.parent.menuHandle({
+                            id: '2',
+                            url: '/backend/page/company/add.html',
+                            name: '添加企业'
+                        },true)
+                    } else {
+                        window.parent.menuHandle({
+                            id: '2',
+                            url: '/backend/page/company/add.html?id='+encodeURIComponent(st),
+                            name: '修改企业'
+                        },true)
+                    }
+                },
+                deleteCompany (id) {
+                    this.id = encodeURIComponent(id)
+                    console.log(this.id)
+                    this.$confirm('确认删除企业?', '提示', {
+                        'confirmButtonText': '确定',
+                        'cancelButtonText': '取消',
+                        'type': 'warning'
+                    }).then(() => {
+                        Promise.all([
+                            deleteCompanyById(this.id),
+                            deleteOrdersByCompanyId(this.id),
+                            deleteFinancingInfoByCompanyId(this.id)
+                        ]).then(results => {
+                            if (results.every(res => res.code === 1)) {
+                                this.$message.success('企业删除成功');
+                                this.handleQuery();
+                            } else {
+                                this.$message.error('企业删除失败');
+                                this.handleQuery();
+                            }
+                        }).catch(err => {
+                            console.error('请求发生错误', err);
+                        });
+                    })
+                },
+                getCompanyDetail(id) {
+                    window.parent.menuHandle({
+                        id: '2',
+                        url: '/backend/page/company/detail.html?id='+encodeURIComponent(id),
+                        name: '企业详情'
+                    },true)
+                },
+                formatCompanyType(row, column) {
+                    const companyTypeMap = {
+                        CORE_ENTERPRISE: '核心企业',
+                        SMEs: '中小企业',
+                        FINANCIAL_INSTITUTION: '金融机构',
+                        LOGISTICS_COMPANY: '物流公司',
+                        // 添加更多类型的映射关系
+                    };
+                    return companyTypeMap[row.companyType] || '';
+                },
+                handleSizeChange (val) {
+                    this.pageSize = val
+                    this.init()
+                },
+                handleCurrentChange (val) {
+                    this.page = val
+                    this.init()
+                }
+            }
+        })
+    </script>
+</body>
+</html>
