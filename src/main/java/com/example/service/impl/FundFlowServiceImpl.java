@@ -126,4 +126,39 @@ public class FundFlowServiceImpl extends ServiceImpl<FundFlowMapper, FundFlow> i
         dtoPage.setTotal(records.size());
         return Result.success(dtoPage);
     }
+
+    @Override
+    public Result getFundFlowByCompanyId(
+            String id,
+            String tradingType,
+            int page,
+            int pageSize
+    ) {
+        Page<FundFlow> fundFlowPage = new Page<>(page, pageSize);
+        Page<FundFlowDto> dtoPage = new Page<>(page, pageSize);
+
+        LambdaQueryWrapper<FundFlow> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(StringUtils.isNotEmpty(id), FundFlow::getPayer, id)
+                .or()
+                .eq(StringUtils.isNotEmpty(id), FundFlow::getReceiver, id)
+                .orderByDesc(FundFlow::getTradingTime)
+                .eq(StringUtils.isNotEmpty(tradingType), FundFlow::getTradingType, tradingType);
+        this.page(fundFlowPage, queryWrapper);
+
+        BeanUtils.copyProperties(fundFlowPage, dtoPage, "records");
+
+        List<FundFlowDto> records = fundFlowPage.getRecords().stream().map((it) -> {
+            FundFlowDto dto = new FundFlowDto();
+            BeanUtils.copyProperties(it, dto);
+
+            dto.setPayerName(companyService.getById(it.getPayer()).getName());
+            dto.setReceiverName(companyService.getById(it.getReceiver()).getName());
+
+            return dto;
+        }).toList();
+
+        dtoPage.setRecords(records);
+        dtoPage.setTotal(records.size());
+        return Result.success(dtoPage);
+    }
 }

@@ -8,6 +8,7 @@ import com.example.entity.CoreEnterprise;
 import com.example.entity.FinancialInstitution;
 
 import javax.swing.plaf.basic.BasicOptionPaneUI;
+import java.util.List;
 
 /**
  * @author Yushun Shao
@@ -17,6 +18,8 @@ public interface FinancialInstitutionService extends IService<FinancialInstituti
     public FinancialInstitution getById(String id);
 
     Result updateByDto(FinancialInstitution financialInstitution, String id);
+
+    public List<FinancialInstitution> customList();
 
     Result getFinancialInstitutionList();
 

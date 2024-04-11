@@ -46,4 +46,12 @@ public class CoreEnterpriseController {
     ) {
         return coreEnterpriseService.page(page, pageSize, name, creditRating);
     }
+
+    @GetMapping("/{id}/creditRating")
+    public Result getCompanyCreditRatingById(
+            @PathVariable
+            String id
+    ) {
+        return coreEnterpriseService.getCompanyCreditRatingById(id);
+    }
 }

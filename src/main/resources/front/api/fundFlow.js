@@ -5,3 +5,11 @@ function getFundFlowPage(params) {
         params,
     });
 }
+
+function getFundFlowByCompanyId(id, params) {
+    return $axios({
+        url: `/fundFlow/company/${id}`,
+        method: 'get',
+        params,
+    });
+}

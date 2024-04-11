@@ -30,29 +30,29 @@ public class FinancingInfoController {
         return financingInfoService.create(financingInfo);
     }
 
-    @PostMapping("/approval")
+    @PostMapping("/{id}/approval")
     public Result approveFinancingInfo(
-            @RequestParam
+            @PathVariable
             String id,
             @RequestParam
-            ApprovalStatus approvalStatus,
+            String approvalStatus,
             @RequestParam
             String approvalComment
     ) {
         return financingInfoService.approve(id, approvalStatus, approvalComment);
     }
 
-    @PostMapping("/loan")
+    @PostMapping("/{id}/loan")
     public Result loanFinancingInfo(
-            @RequestParam
+            @PathVariable
             String id
     ) throws InterruptedException, TimeoutException {
         return financingInfoService.loan(id);
     }
 
-    @PostMapping("/repay")
+    @PostMapping("/{id}/repay")
     public Result repayFinancingInfo(
-            @RequestParam
+            @PathVariable
             String id
     ) throws InterruptedException, TimeoutException {
         return financingInfoService.repay(id);
@@ -101,5 +101,15 @@ public class FinancingInfoController {
             int pageSize
     ) {
         return financingInfoService.getFinancingInfoByCompanyId(id, page, pageSize);
+    }
+
+    @GetMapping("/financialInstitution/{id}")
+    public Result getFinancingInfoByFinancialInstitutionId(
+            @PathVariable
+            String id,
+            int page,
+            int pageSize
+    ) {
+        return financingInfoService.getFinancingInfoByFinancialInstitutionId(id, page, pageSize);
     }
 }

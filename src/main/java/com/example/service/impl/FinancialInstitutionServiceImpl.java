@@ -47,9 +47,7 @@ public class FinancialInstitutionServiceImpl extends ServiceImpl<FinancialInstit
 
         // 排除父类的列
         queryWrapper.select(FinancialInstitution.class, info -> !"name".equals(info.getColumn())
-                        && !"company_type".equals(info.getColumn()) && !"contact_info".equals(info.getColumn())
-                        && !"created_by".equals(info.getColumn()) && !"created_time".equals(info.getColumn())
-                        && !"updated_by".equals(info.getColumn()) && !"updated_time".equals(info.getColumn()))
+                        && !"company_type".equals(info.getColumn()) && !"contact_info".equals(info.getColumn()))
                 .eq("id", id);
 
         return financialInstitutionMapper.selectOne(queryWrapper);
@@ -67,8 +65,24 @@ public class FinancialInstitutionServiceImpl extends ServiceImpl<FinancialInstit
     }
 
     @Override
+    public List<FinancialInstitution> customList() {
+        QueryWrapper<FinancialInstitution> queryWrapper = new QueryWrapper<>();
+
+        // 排除父类的列
+        queryWrapper.select(FinancialInstitution.class, info -> !"name".equals(info.getColumn())
+                        && !"company_type".equals(info.getColumn()) && !"contact_info".equals(info.getColumn()));
+
+        return this.list(queryWrapper);
+    }
+
+    @Override
     public Result getFinancialInstitutionList() {
-        return Result.success(this.list());
+        List<FinancialInstitution> financialInstitutions = this.customList();
+        financialInstitutions.forEach((it) -> {
+            Company byId = companyService.getById(it.getId());
+            BeanUtils.copyProperties(byId, it);
+        });
+        return Result.success(financialInstitutions);
     }
 
     @Override

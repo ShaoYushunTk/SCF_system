@@ -8,6 +8,7 @@ import com.example.entity.Orders;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author Yushun Shao
@@ -18,9 +19,9 @@ public interface OrdersService extends IService<Orders> {
 
     Result<OrderDto> getOrderDtoById(String id);
 
-    Result payOrder(String id);
+    Result payOrder(String id) throws InterruptedException, TimeoutException;
 
-    Result updateStatus(String id, OrderStatus orderStatus);
+    Result updateStatus(String id, String orderStatus);
 
     List<Orders> listByCompanyId(List<String> idList);
 

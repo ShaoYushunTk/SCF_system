@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="../../../styles/common.css" />
+    <link rel="stylesheet" href="../../../styles/page.css" />
+</head>
+<body>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../../plugins/axios/axios.min.js"></script>
+    <script src="../../../js/request.js"></script>
+    <script src="../../../api/company.js"></script>
+    <script src="../../../js/index.js"></script>
+    <script src="../../../api/financingInfo.js"></script>
+    <script src="../../../api/financialInstitution.js"></script>
+    <div class="dashboard-container" id="financingInfoUserApply-app">
+        <div class="container">
+            <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+                <el-form-item label="融资企业名称" prop="name">
+                    <el-input v-model="companyInfo.name" readonly></el-input>
+                </el-form-item>
+                <el-form-item label="企业信用等级" prop="creditRating">
+                    <el-input v-model="this.creditRating" readonly></el-input>
+                </el-form-item>
+                <el-form-item label="融资类型">
+                    <el-select v-model="ruleForm.financingType" placeholder="请选择融资类型">
+                        <el-option label="应收账款融资" value="ACCOUNTS_RECEIVABLE"></el-option>
+                        <el-option label="采购订单融资" value="PURCHASE_ORDER"></el-option>
+                        <el-option label="供应链融资" value="SUPPLY_CHAIN"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="融资金额" prop="account">
+                    <el-input v-model="ruleForm.account"></el-input>
+                </el-form-item>
+                <el-form-item label="融资申请备注" prop="applyComment">
+                    <el-input v-model="ruleForm.applyComment"></el-input>
+                </el-form-item>
+                <el-form-item label="金融机构">
+                    <el-select v-model="ruleForm.financialInstitutionId" placeholder="请选择金融机构" @change="updateInterestRate()">
+                        <el-option v-for="(item, index) in this.financialInstitutionList" :key="index" :label="item.name" :value="item.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="年利率" prop="interestRate">
+                    <el-input v-model="this.interestRate" readonly></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="goBack()">取消</el-button>
+                    <el-button type="primary" @click="submitForm('ruleForm')">保存</el-button>
+                    <el-button type="primary" @click="resetForm('ruleForm')">重置</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: '#financingInfoUserApply-app',
+            data() {
+                return {
+                    ruleForm : {
+                        'financingType': '',
+                        'account': '',
+                        'applyComment': '',
+                        'financialInstitutionId': '',
+                    },
+                    id : '',
+                    user : {},
+                    companyId : '',
+                    companyInfo : {},
+                    financialInstitutionList : [],
+                    creditRating: '',
+                    interestRate: '',
+                    rules: {
+                        financingType: [
+                            {required: true, message: '请选择融资类型', trigger: 'blur'},
+                        ],
+                        account: [
+                            {required: true, message: '请输入融资金额', trigger: 'change'},
+                            {
+                                validator: (rule, value, callback) => {
+                                    const reg = /^[0-9]+(\.[0-9]{1,2})?$/; // 正则表达式：整数或小数点后最多两位数字
+                                    if (!reg.test(value)) {
+                                        callback(new Error('融资金额必须为数字，最多保留两位小数'));
+                                    } else {
+                                        callback();
+                                    }
+                                },
+                                trigger: 'change'
+                            }
+                        ],
+                        applyComment: [
+                            {required: true, message: '请输入融资申请备注', trigger: 'blur'},
+                        ],
+                        financialInstitutionId: [
+                            {required: true, message: '请选择金融机构', trigger: 'change'},
+                        ],
+                    }
+                }
+            },
+            computed: {},
+            created() {
+                const userInfo = window.sessionStorage.getItem('userInfo')
+                if (userInfo) {
+                    this.user = JSON.parse(userInfo)
+                    this.companyId = encodeURIComponent(this.user.companyId)
+                }
+                this.init()
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const companyRes = await getCompanyDetail(this.companyId)
+                    if (String(companyRes.code) === '1') {
+                        this.companyInfo = companyRes.data
+                    } else {
+                        this.$message.error('请求出错了：' + String(companyRes.msg))
+                    }
+
+                    const financialInstitutionRes = await getFinancialInstitutionList()
+                    if (String(financialInstitutionRes.code) === '1') {
+                        this.financialInstitutionList = financialInstitutionRes.data
+                    } else {
+                        this.$message.error('请求出错了：' + String(financialInstitutionRes.msg))
+                    }
+
+                    const creditRatingRes = await getCompanyCreditRatingById(this.companyId)
+                    if (String(creditRatingRes.code) === '1') {
+                        this.creditRating = creditRatingRes.data
+                    } else {
+                        this.$message.error('请求出错了：' + String(creditRatingRes.msg))
+                    }
+                    console.log(this.companyInfo)
+                    console.log(this.financialInstitutionList)
+                    console.log(this.creditRating)
+                },
+                handleQuery() {
+                    this.init();
+                },
+                // 添加
+                submitForm(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            const params = {
+                                ...this.ruleForm
+                            }
+                            createFinancingInfo(params).then(res => {
+                                if (res.code === 1) {
+                                    this.$message.success('融资申请提交成功！')
+                                    this.goBack()
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+                        } else {
+                            console.log('error submit!!');
+                        }
+                    });
+                },
+                updateInterestRate () {
+                    const financialInstitutionId = this.ruleForm.financialInstitutionId;
+                    console.log(financialInstitutionId)
+                    const financialInstitution = this.financialInstitutionList.find(item => item.id === financialInstitutionId);
+                    if (financialInstitution) {
+                        this.interestRate = financialInstitution.loanInterestRate[this.creditRating];
+                    }
+                    console.log(this.interestRate)
+                },
+                formatFinancingType (row, column) {
+                    const financingTypeMap = {
+                        ACCOUNTS_RECEIVABLE: '应收账款融资',
+                        PURCHASE_ORDER: '采购订单融资',
+                        SUPPLY_CHAIN: '供应链融资',
+                        // 添加更多类型的映射关系
+                    };
+                    return financingTypeMap[row.financingType] || '';
+                },
+                formatApprovalStatus (row, column) {
+                    const approvalTypeMap = {
+                        PENDING: '待审批',
+                        APPROVE: '审批通过',
+                        REJECT: '审批拒绝',
+                        // 添加更多类型的映射关系
+                    };
+                    return approvalTypeMap[row.approvalStatus] || '';
+                },
+                goBack() {
+                    window.parent.menuHandle({
+                        id: '2',
+                        url: '/front/page/financingInfo/user/applyList.html',
+                        name: '融资申请'
+                    },false)
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
+                },
+            }
+        })
+    </script>
+</body>
+</html>

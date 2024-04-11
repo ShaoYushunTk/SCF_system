@@ -12,7 +12,9 @@ public enum OrderStatus {
     PAID("已支付"),
     UNDELIVERED("待发货"),
     DELIVERED("已发货"),
-    COMPLETED("已完成");
+    COMPLETED("已完成"),
+    SHIPPING("运输中"),
+    TO_BE_SIGNED("待签收");
     private final String description;
     OrderStatus(String description) {
         this.description = description;

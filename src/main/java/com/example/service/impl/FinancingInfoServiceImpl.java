@@ -94,7 +94,7 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
     @Override
     public Result approve(
             String id,
-            ApprovalStatus approvalStatus,
+            String approvalStatus,
             String approvalComment
     ) {
         FinancingInfo financingInfo = this.getById(id);
@@ -104,7 +104,7 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
         // 更新融资信息的状态和审批意见
         financingInfo.setApprovalId(BaseContext.getCurrentId());
         financingInfo.setApprovalComment(approvalComment);
-        financingInfo.setApprovalStatus(approvalStatus);
+        financingInfo.setApprovalStatus(ApprovalStatus.valueOf(approvalStatus));
         financingInfo.setApprovalTime(LocalDateTime.now());
         this.saveOrUpdate(financingInfo);
         return Result.success("融资信息审批成功");
@@ -132,7 +132,6 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
         fundFlow.setTradingType(TradingType.FINANCING_LOAN);
         fundFlowService.createFundFlow(fundFlow);
         // 更新企业资金信息表
-
         LambdaQueryWrapper<CompanyAsset> companyAssetQueryWrapper = new LambdaQueryWrapper<>();
         companyAssetQueryWrapper.eq(CompanyAsset::getCompanyId, companyId);
         CompanyAsset companyAsset = companyAssetService.getOne(companyAssetQueryWrapper);
@@ -247,6 +246,7 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
             BeanUtils.copyProperties(it, dto);
             dto.setCompanyName(companyService.getById(it.getCompanyId()).getName());
             dto.setFinancialInstitutionName(companyService.getById(it.getFinancialInstitutionId()).getName());
+            dto.setApprovalName(commonUtils.getCurrentUserName());
             return dto;
         }).toList();
 
@@ -307,6 +307,32 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
             BeanUtils.copyProperties(it, dto);
             dto.setCompanyName(companyService.getById(it.getCompanyId()).getName());
             dto.setFinancialInstitutionName(companyService.getById(it.getFinancialInstitutionId()).getName());
+            dto.setApprovalName(commonUtils.getCurrentUserName());
+            return dto;
+        }).toList();
+
+        dtoPage.setRecords(records);
+        dtoPage.setTotal(records.size());
+        return Result.success(dtoPage);
+    }
+
+    @Override
+    public Result getFinancingInfoByFinancialInstitutionId(String id, int page, int pageSize) {
+        Page<FinancingInfo> pageInfo = new Page<>(page, pageSize);
+        Page<FinancingInfoDto> dtoPage = new Page<>(page, pageSize);
+        LambdaQueryWrapper<FinancingInfo> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(FinancingInfo::getFinancialInstitutionId, id);
+        lambdaQueryWrapper.orderByDesc(FinancingInfo::getApplyTime);
+        this.page(pageInfo, lambdaQueryWrapper);
+
+        BeanUtils.copyProperties(pageInfo, dtoPage, "records");
+
+        List<FinancingInfoDto> records = pageInfo.getRecords().stream().map((it) -> {
+            FinancingInfoDto dto = new FinancingInfoDto();
+            BeanUtils.copyProperties(it, dto);
+            dto.setCompanyName(companyService.getById(it.getCompanyId()).getName());
+            dto.setFinancialInstitutionName(companyService.getById(it.getFinancialInstitutionId()).getName());
+            dto.setApprovalName(commonUtils.getCurrentUserName());
             return dto;
         }).toList();
 

@@ -6,20 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <!-- 引入样式 -->
-    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
-    <link rel="stylesheet" href="../../styles/common.css" />
-    <link rel="stylesheet" href="../../styles/page.css" />
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="../../../styles/common.css" />
+    <link rel="stylesheet" href="../../../styles/page.css" />
 </head>
-    <body>
+<body>
     <!-- 开发环境版本，包含了有帮助的命令行警告 -->
-    <script src="../../plugins/vue/vue.js"></script>
+    <script src="../../../plugins/vue/vue.js"></script>
     <!-- 引入组件库 -->
-    <script src="../../plugins/element-ui/index.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
     <!-- 引入axios -->
-    <script src="../../plugins/axios/axios.min.js"></script>
-    <script src="../../js/request.js"></script>
-    <script src="../../api/coreEnterprise.js"></script>
-    <div class="dashboard-container" id="creditRatingList-app">
+    <script src="../../../plugins/axios/axios.min.js"></script>
+    <script src="../../../js/request.js"></script>
+    <script src="../../../api/company.js"></script>
+    <script src="../../../js/index.js"></script>
+    <script src="../../../api/coreEnterprise.js"></script>
+    <div class="dashboard-container" id="creditRatingUserList-app">
         <div class="container">
             <div class="tableBar">
                 <el-input
@@ -42,15 +44,37 @@
             </div>
             <el-table :data="tableData" stripe class="tableBox">
                 <el-table-column prop="name" label="核心企业名称"></el-table-column>
-                <el-table-column prop="creditRating" label="信用评级"></el-table-column>
+                <el-table-column prop="creditRating" label="信用评级">
+                    <template slot-scope="scope">
+                        {{ scope.row.creditRating ? scope.row.creditRating : '-' }}
+                    </template>
+                </el-table-column>
                 <el-table-column prop="smallMiddleEnterpriseNameList" label="关联的中小企业" :formatter="formatList"></el-table-column>
                 <el-table-column label="操作" width="160" align="center">
                     <template slot-scope="scope">
                         <el-button
                                 type="text"
+                                v-if="isEditVisible(scope.row)"
+                                style="color: #3a8ee6 !important; background-color: transparent !important; border-color: transparent !important;"
+                                size="small"
+                                @click="handleApprovalCreditRating(scope.row.id)"
+                        >
+                            修改
+                        </el-button>
+                        <el-button
+                                type="text"
+                                v-if="isApprovalCreditRatingVisible(scope.row)"
+                                style="color: #3a8ee6 !important; background-color: transparent !important; border-color: transparent !important;"
+                                size="small"
+                                @click="handleApprovalCreditRating(scope.row.id)"
+                        >
+                            评估
+                        </el-button>
+                        <el-button
+                                type="text"
                                 size="small"
                                 class="blueBug"
-                                style="color: #3a8ee6 !important; background-color: transparent !important; border-color: transparent !important;"
+                                style="color: #333333 !important; background-color: transparent !important; border-color: transparent !important;"
                                 @click="getCoreEnterpriseCreditRatingDetailHandle(scope.row.id)"
                         >
                             详情
@@ -72,7 +96,7 @@
     </div>
     <script>
         new Vue({
-            el: '#creditRatingList-app',
+            el: '#creditRatingUserList-app',
             data() {
                 return {
                     inputName: '',
@@ -82,13 +106,15 @@
                     pageSize: 10,
                     tableData : [],
                     id : '',
-                    user : '',
-                    companyId : '',
+                    user : {},
                 }
             },
             computed: {},
             created() {
-                this.user = JSON.parse(localStorage.getItem('empInfo')).username
+                const userInfo = window.sessionStorage.getItem('userInfo')
+                if (userInfo) {
+                    this.user = JSON.parse(userInfo)
+                }
                 this.init()
             },
             mounted() {
@@ -115,11 +141,24 @@
                     this.page = 1;
                     this.init();
                 },
+                isApprovalCreditRatingVisible(row) {
+                    return row.creditRating === '';
+                },
+                isEditVisible(row) {
+                    return row.creditRating !== '';
+                },
+                handleApprovalCreditRating(st) {
+                    window.parent.menuHandle({
+                        id: '2',
+                        url: '/front/page/coreEnterprise/user/approvalCreditRating.html?id='+encodeURIComponent(st),
+                        name: '信用评估'
+                    },true)
+                },
                 // 获取详情
                 getCoreEnterpriseCreditRatingDetailHandle (st) {
                     window.parent.menuHandle({
                         id: '2',
-                        url: '/front/page/coreEnterprise/dtoDetail.html?companyId='+encodeURIComponent(st),
+                        url: '/front/page/coreEnterprise/dtoDetail.html?id='+encodeURIComponent(st),
                         name: '企业详情'
                     },true)
                 },

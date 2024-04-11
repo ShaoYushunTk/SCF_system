@@ -5,24 +5,26 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.common.BaseContext;
 import com.example.common.Result;
 import com.example.constant.OrderStatus;
+import com.example.constant.TradingType;
 import com.example.dto.OrderDto;
 import com.example.entity.*;
 import com.example.exception.CommonException;
 import com.example.mapper.OrderMapper;
-import com.example.service.CompanyAssetService;
-import com.example.service.CompanyService;
-import com.example.service.OrdersService;
-import com.example.service.UserService;
+import com.example.service.*;
 import com.example.utils.CommonUtils;
 import com.example.utils.UUIDUtils;
 import org.aspectj.weaver.ast.Or;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author Yushun Shao
@@ -40,14 +42,25 @@ public class OrdersServiceImpl extends ServiceImpl<OrderMapper, Orders> implemen
     @Autowired
     private CompanyAssetService companyAssetService;
 
+    @Autowired
+    private FundFlowService fundFlowService;
+
     @Override
     public Result saveOrder(
             Orders order
     ) {
         order.setId(UUIDUtils.generate());
         order.setOrderTime(LocalDateTime.now());
-        // TODO 使用工具类抽取根据userId获取公司信息的方法
-        order.setPayer(commonUtils.getCompanyIdByCurrentUser());
+        String companyIdByCurrentUser = commonUtils.getCompanyIdByCurrentUser();
+        if (!Objects.equals(companyIdByCurrentUser, order.getPayer()) && !Objects.equals(companyIdByCurrentUser, order.getReceiver())) {
+            throw new CommonException("支付方和收款方必须包含当前用户所属公司");
+        }
+        if (order.getGoodsList() == null || order.getGoodsList().isEmpty()) {
+            throw new CommonException("订单商品不能为空");
+        }
+        if (Objects.equals(order.getPayer(), order.getReceiver())) {
+            throw new CommonException("支付方和收款方不能相同");
+        }
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (Goods goods : order.getGoodsList()) {
@@ -91,9 +104,10 @@ public class OrdersServiceImpl extends ServiceImpl<OrderMapper, Orders> implemen
     }
 
     @Override
+    @Transactional
     public Result payOrder(
             String id
-    ) {
+    ) throws InterruptedException, TimeoutException {
         LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Orders::getId, id);
         Orders order = this.getOne(queryWrapper);
@@ -115,6 +129,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrderMapper, Orders> implemen
         payerCash = payerCash.subtract(order.getAmount());
         payerAsset.setCash(payerCash);
         List<Orders> payerAssets = payerAsset.getOrderAssets();
+        if (payerAssets == null) {
+            payerAssets = new ArrayList<>();
+        }
         payerAssets.add(order);
         payerAsset.setOrderAssets(payerAssets);
         companyAssetService.saveOrUpdate(payerAsset);
@@ -123,10 +140,14 @@ public class OrdersServiceImpl extends ServiceImpl<OrderMapper, Orders> implemen
         LambdaQueryWrapper<CompanyAsset> companyAssetLambdaQueryWrapper2 = new LambdaQueryWrapper<>();
         companyAssetLambdaQueryWrapper2.eq(CompanyAsset::getCompanyId, order.getReceiver());
         CompanyAsset receiverAsset = companyAssetService.getOne(companyAssetLambdaQueryWrapper2);
+
         BigDecimal receiverCash = receiverAsset.getCash();
         receiverCash = receiverCash.add(order.getAmount());
         receiverAsset.setCash(receiverCash);
         List<Orders> receiverAssets = receiverAsset.getOrderAssets();
+        if (receiverAssets == null) {
+            receiverAssets = new ArrayList<>();
+        }
         receiverAssets.add(order);
         receiverAsset.setOrderAssets(receiverAssets);
         companyAssetService.saveOrUpdate(receiverAsset);
@@ -135,13 +156,28 @@ public class OrdersServiceImpl extends ServiceImpl<OrderMapper, Orders> implemen
         order.setOrderStatus(OrderStatus.PAID);
         this.saveOrUpdate(order);
 
+        // 更新资金流水表
+        FundFlow fundFlow = new FundFlow();
+        fundFlow.setPayer(order.getPayer());
+        fundFlow.setReceiver(order.getReceiver());
+        fundFlow.setAccount(order.getAmount());
+        fundFlow.setTradingType(TradingType.PURCHASE_PAYMENT);
+        fundFlowService.createFundFlow(fundFlow);
+
+        FundFlow fundFlow2 = new FundFlow();
+        fundFlow2.setPayer(order.getReceiver());
+        fundFlow2.setReceiver(order.getPayer());
+        fundFlow2.setAccount(order.getAmount());
+        fundFlow2.setTradingType(TradingType.SALE_RECEIPT);
+        fundFlowService.createFundFlow(fundFlow2);
+
         return Result.success("支付成功");
     }
 
     @Override
     public Result updateStatus(
             String id,
-            OrderStatus orderStatus
+            String orderStatus
     ) {
         LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Orders::getId, id);
@@ -151,7 +187,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrderMapper, Orders> implemen
         }
 
         // 更新订单状态
-        order.setOrderStatus(orderStatus);
+        order.setOrderStatus(OrderStatus.valueOf(orderStatus));
         this.saveOrUpdate(order);
 
         return Result.success("更新状态成功");

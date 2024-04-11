@@ -17,4 +17,6 @@ public interface FundFlowService extends IService<FundFlow> {
     Result deleteByCompanyId(String companyId) throws InterruptedException, TimeoutException;
 
     Result page(int page, int pageSize, String tradingType, String name);
+
+    Result getFundFlowByCompanyId(String id, String tradingType, int page, int pageSize);
 }

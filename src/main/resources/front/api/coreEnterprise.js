@@ -13,3 +13,11 @@ function getCoreEnterpriseCreditRatingPage(params) {
         params,
     });
 }
+
+function saveCoreEnterpriseCreditRating(id, params) {
+    return $axios({
+        url: `/coreEnterprise/${id}/saveCreditRating`,
+        method: 'post',
+        params,
+    });
+}

@@ -51,4 +51,15 @@ public class FundFlowController {
     ) throws InterruptedException, TimeoutException {
         return fundFlowService.deleteByCompanyId(companyId);
     }
+
+    @GetMapping("/company/{id}")
+    public Result getFundFlowByCompanyId(
+            @PathVariable
+            String id,
+            String tradingType,
+            int page,
+            int pageSize
+    ) {
+        return fundFlowService.getFundFlowByCompanyId(id, tradingType, page, pageSize);
+    }
 }

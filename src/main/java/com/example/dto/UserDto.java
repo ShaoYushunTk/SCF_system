@@ -12,4 +12,5 @@ import lombok.Data;
 public class UserDto extends User {
     private String companyName;
     private CompanyType companyType;
+    private String maskedBankNumber;
 }

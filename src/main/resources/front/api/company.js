@@ -35,3 +35,18 @@ function deleteCompanyById(id) {
         method: 'post',
     });
 }
+
+function getCompanyCreditRatingById(id) {
+    return $axios({
+        url: `/coreEnterprise/${id}/creditRating`,
+        method: 'get',
+    });
+}
+
+function getCompanyList(params) {
+    return $axios({
+        url: `/company/list`,
+        method: 'get',
+        params
+    });
+}

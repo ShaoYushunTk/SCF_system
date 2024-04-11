@@ -6,40 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <!-- 引入样式 -->
-    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
-    <link rel="stylesheet" href="../../styles/common.css" />
-    <link rel="stylesheet" href="../../styles/page.css" />
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="../../../styles/common.css" />
+    <link rel="stylesheet" href="../../../styles/page.css" />
 </head>
 <body>
     <!-- 开发环境版本，包含了有帮助的命令行警告 -->
-    <script src="../../plugins/vue/vue.js"></script>
+    <script src="../../../plugins/vue/vue.js"></script>
     <!-- 引入组件库 -->
-    <script src="../../plugins/element-ui/index.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
     <!-- 引入axios -->
-    <script src="../../plugins/axios/axios.min.js"></script>
-    <script src="../../js/request.js"></script>
-    <script src="../../api/orders.js"></script>
-    <div class="dashboard-container" id="orders-app">
+    <script src="../../../plugins/axios/axios.min.js"></script>
+    <script src="../../../js/request.js"></script>
+    <script src="../../../api/company.js"></script>
+    <script src="../../../js/index.js"></script>
+    <script src="../../../api/orders.js"></script>
+    <div class="dashboard-container" id="ordersLogisticProviderUser-app">
         <div class="container">
-            <div class="tableBar">
-                <el-input
-                        v-model="input"
-                        placeholder="请输入交易企业名称"
-                        style="width: 250px"
-                        clearable
-                        @keyup.enter.native="handleQuery"
-                >
-                </el-input>
-                <el-select v-model="inputOrderStatus" placeholder="请选择订单状态">
-                    <el-option label="请选择订单状态" value=""></el-option>
-                    <el-option label="待支付" value="UNPAID"></el-option>
-                    <el-option label="已支付" value="PAID"></el-option>
-                    <el-option label="待发货" value="UNDELIVERED"></el-option>
-                    <el-option label="已发货" value="DELIVERED"></el-option>
-                    <el-option label="已完成" value="COMPLETED"></el-option>
-                </el-select>
-                <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
-            </div>
             <el-table :data="tableData" stripe class="tableBox">
                 <el-table-column prop="payerName" label="支付方"></el-table-column>
                 <el-table-column prop="receiverName" label="收款方"></el-table-column>
@@ -55,6 +38,27 @@
                 </el-table-column>
                 <el-table-column label="操作" width="160" align="center">
                     <template slot-scope="scope">
+                        <!-- 货物运输按钮 -->
+                        <el-button
+                                type="text"
+                                v-if="isOrderShippingVisible(scope.row)"
+                                style="color: #3a8ee6 !important; background-color: transparent !important; border-color: transparent !important;"
+                                size="small"
+                                @click="handleOrderShipping(scope.row)"
+                        >
+                            运输开始
+                        </el-button>
+                        <!-- 货物运输完成按钮 -->
+                        <el-button
+                                type="text"
+                                v-if="isOrderShippingCompletedVisible(scope.row)"
+                                style="color: #3a8ee6 !important; background-color: transparent !important; border-color: transparent !important;"
+                                size="small"
+                                @click="handleOrderPreparationCompleted(scope.row)"
+                        >
+                            运输完成
+                        </el-button>
+                        <!-- 详情按钮 -->
                         <el-button
                                 type="text"
                                 size="small"
@@ -63,15 +67,6 @@
                                 @click="getOrderDetail(scope.row.id)"
                         >
                             详情
-                        </el-button>
-                        <el-button
-                                type="text"
-                                size="small"
-                                class="delBut non"
-                                style="color: red !important; background-color: transparent !important; border-color: transparent !important;"
-                                @click="deleteOrder(scope.row.id)"
-                        >
-                            删除
                         </el-button>
                     </template>
                 </el-table-column>
@@ -97,22 +92,28 @@
             return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
         });
         new Vue({
-            el: '#orders-app',
+            el: '#ordersLogisticProviderUser-app',
             data() {
                 return {
-                    input: '',
-                    inputOrderStatus: '',
                     counts: 0,
                     page: 1,
                     pageSize: 10,
                     tableData : [],
                     id : '',
+                    user : {},
+                    companyId : '',
                 }
             },
             computed: {},
             created() {
+                const userInfo = window.sessionStorage.getItem('userInfo')
+                if (userInfo) {
+                    this.user = JSON.parse(userInfo)
+                    this.companyId = encodeURIComponent(this.user.companyId)
+                    console.log(this.user)
+                    console.log(this.companyId)
+                }
                 this.init()
-                this.user = JSON.parse(localStorage.getItem('empInfo')).username
             },
             mounted() {
             },
@@ -121,11 +122,9 @@
                     const params = {
                         page: this.page,
                         pageSize: this.pageSize,
-                        companyName: this.input ? this.input : undefined,
-                        orderStatus: this.inputOrderStatus ? this.inputOrderStatus : undefined
                     }
                     console.log(params)
-                    await getOrdersPage(params).then(res => {
+                    await getOrdersByLogisticProviderId(this.companyId, params).then(res => {
                         if (String(res.code) === '1') {
                             this.tableData = res.data.records || []
                             this.counts = res.data.total
@@ -138,31 +137,60 @@
                     this.page = 1;
                     this.init();
                 },
-                deleteOrder (id) {
-                    this.id = encodeURIComponent(id)
-                    console.log(this.id)
-                    this.$confirm('确认删除订单?', '提示', {
-                        'confirmButtonText': '确定',
-                        'cancelButtonText': '取消',
-                        'type': 'warning'
+
+                // 处理货物运输
+                isOrderShippingVisible(row) {
+                    return row.orderStatus === 'DELIVERED';
+                },
+                handleOrderShipping(row) {
+                    // 弹出二次确认的弹框
+                    this.$confirm('确认此订单货物开始运输？', '货物运输确认', {
+                        confirmButtonText: '确认',
+                        cancelButtonText: '取消',
+                        type: 'warning'
                     }).then(() => {
-                            deleteOrdersById(this.id).then(res => {
-                            if (res.code === 1) {
-                                this.$message.success('订单删除成功');
-                                this.handleQuery();
-                            } else {
-                                this.$message.error(res.msg);
-                                this.handleQuery();
-                            }
-                        }).catch(err => {
-                            console.error('请求发生错误', err);
-                        });
+                        // 用户点击确认后
+                        this.handleOrderStatusUpdate(encodeURIComponent(row.id), 'SHIPPING');
+                    }).catch(() => {
+                        // 用户点击取消，不执行任何操作
+                    });
+                },
+
+                // 处理货物运输完成
+                isOrderShippingCompletedVisible(row) {
+                    return row.orderStatus === 'SHIPPING';
+                },
+                handleOrderPreparationCompleted(row) {
+                    // 弹出二次确认的弹框
+                    this.$confirm('确认此订单货物运输完成？', '货物运输完成确认', {
+                        confirmButtonText: '确认',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        // 用户点击确认后
+                        this.handleOrderStatusUpdate(encodeURIComponent(row.id), 'TO_BE_SIGNED');
+                    }).catch(() => {
+                        // 用户点击取消，不执行任何操作
+                    });
+                },
+                handleOrderStatusUpdate(id, status) {
+                    const params = {
+                        orderStatus: status
+                    }
+                    updateOrderStatus(id, params).then(res => {
+                        if (String(res.code) === '1') {
+                            this.init();
+                        } else {
+                            this.$message.error(res.msg)
+                        }
+                    }).catch(err => {
+                        this.$message.error(err)
                     })
                 },
                 getOrderDetail(id) {
                     window.parent.menuHandle({
-                        id: '2',
-                        url: '/backend/page/order/detail.html?id='+encodeURIComponent(id),
+                        id: '3',
+                        url: '/front/page/order/detail.html?id='+encodeURIComponent(id),
                         name: '订单详情'
                     },true)
                 },

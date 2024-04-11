@@ -135,6 +135,7 @@ public class CoreEnterpriseServiceImpl extends ServiceImpl<CoreEnterpriseMapper,
         if (StringUtils.isNotEmpty(creditRating)) {
             records = records.stream().filter(dto -> dto.getCreditRating().equals(creditRating)).collect(Collectors.toList());
         }
+        dtoPage.setTotal(records.size());
         dtoPage.setRecords(records);
         return Result.success(dtoPage);
     }
@@ -176,5 +177,32 @@ public class CoreEnterpriseServiceImpl extends ServiceImpl<CoreEnterpriseMapper,
         coreEnterprisePage.setRecords(records);
         coreEnterprisePage.setTotal(records.size());
         return Result.success(coreEnterprisePage);
+    }
+
+    @Override
+    public Result getCompanyCreditRatingById(String id) {
+        Company company = companyService.getById(id);
+        if (company == null) {
+            throw new CommonException("企业不存在");
+        }
+
+        String creditRating;
+        switch (company.getCompanyType()) {
+            case CORE_ENTERPRISE:
+                creditRating = getById(id).getCreditRating();
+                break;
+            case SMEs:
+                String coreEnterpriseId = smallMiddleEnterpriseService.getById(id).getCoreEnterpriseId();
+                CoreEnterprise coreEnterprise = getById(coreEnterpriseId);
+                if (coreEnterprise == null) {
+                    throw new CommonException("当前企业未关联核心企业，无法申请融资");
+                }
+                creditRating = coreEnterprise.getCreditRating();
+                break;
+            default:
+                throw new CommonException("不支持的企业类型");
+        }
+
+        return Result.success(creditRating);
     }
 }

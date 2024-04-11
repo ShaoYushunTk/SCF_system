@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="../../../styles/common.css" />
+    <link rel="stylesheet" href="../../../styles/page.css" />
+</head>
+<body>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../../plugins/axios/axios.min.js"></script>
+    <script src="../../../js/request.js"></script>
+    <script src="../../../api/company.js"></script>
+    <script src="../../../js/index.js"></script>
+    <script src="../../../api/coreEnterprise.js"></script>
+    <div class="dashboard-container" id="creditRatingUserApproval-app">
+        <div class="container">
+            <el-descriptions title="企业详情" :column="3" border>
+                <el-descriptions-item prop="companyName">
+                    <template slot="label">
+                        <i class="el-icon-user"></i>
+                        企业名称
+                    </template>
+                    {{ this.coreEnterpriseData.name || '' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="企业类型" prop="companyType">
+                    <template slot="label">
+                        <i class="el-icon-tickets"></i>
+                        企业类型
+                    </template>
+                    {{ formatCompanyType(coreEnterpriseData.companyType) || '' }}
+                </el-descriptions-item>
+                <el-descriptions-item prop="contactInfo.phone">
+                    <template slot="label">
+                        <i class="el-icon-phone-outline"></i>
+                        联系电话
+                    </template>
+                    {{ coreEnterpriseData.contactInfo.phone || '' }}
+                </el-descriptions-item>
+                <el-descriptions-item prop="contactInfo.address">
+                    <template slot="label">
+                        <i class="el-icon-location-outline"></i>
+                        联系地址
+                    </template>
+                    {{ coreEnterpriseData.contactInfo.address || '' }}
+                </el-descriptions-item>
+                <el-descriptions-item prop="contactInfo.email">
+                    <template slot="label">
+                        <i class="el-icon-message"></i>
+                        联系邮箱
+                    </template>
+                    {{ coreEnterpriseData.contactInfo.email || '' }}
+                </el-descriptions-item>
+
+                <el-descriptions-item prop="enterpriseIndustry">
+                    <template slot="label">
+                        <i class="el-icon-office-building"></i>
+                        所属行业
+                    </template>
+                    {{ this.coreEnterpriseData.enterpriseIndustry || '' }}
+                </el-descriptions-item>
+                <el-descriptions-item prop="registeredCapital">
+                    <template slot="label">
+                        <i class="el-icon-money"></i>
+                        注册资本
+                    </template>
+                    {{ this.coreEnterpriseData.registeredCapital || '' }}
+                </el-descriptions-item>
+                <el-descriptions-item prop="liquidAssets">
+                    <template slot="label">
+                        <i class="el-icon-coin"></i>
+                        流动资产
+                    </template>
+                    {{ this.coreEnterpriseData.liquidAssets || '' }}
+                </el-descriptions-item>
+                <el-descriptions-item prop="fixedAssets">
+                    <template slot="label">
+                        <i class="el-icon-coin"></i>
+                        固定资产
+                    </template>
+                    {{ this.coreEnterpriseData.fixedAssets || '' }}
+                </el-descriptions-item>
+                <el-descriptions-item prop="liquidLiabilities">
+                    <template slot="label">
+                        <i class="el-icon-wallet"></i>
+                        流动负债
+                    </template>
+                    {{ this.coreEnterpriseData.liquidLiabilities || '' }}
+                </el-descriptions-item>
+                <el-descriptions-item prop="fixedLiabilities">
+                    <template slot="label">
+                        <i class="el-icon-wallet"></i>
+                        固定负债
+                    </template>
+                    {{ this.coreEnterpriseData.fixedLiabilities || '' }}
+                </el-descriptions-item>
+            </el-descriptions>
+
+        </div>
+        <div class="container">
+            <!-- 标题区域 -->
+            <el-row>
+                <el-col :span="24">
+                    <h2 style="margin-bottom: 20px; font-size: 16px;">信用评估</h2>
+                </el-col>
+            </el-row>
+            <el-form :inline="true" :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+                <el-cascader
+                        v-model="ruleForm.creditRating"
+                        :options="this.creditRatingOptions"
+                        :props="{ expandTrigger: 'hover' }"
+                        @change="handleCreditRatingChange"
+                        placeholder="请选择当前企业信用等级">
+                </el-cascader>
+                <el-form-item>
+                    <el-button type="primary" @click="goBack()">取消</el-button>
+                    <el-button type="primary" @click="submitForm('ruleForm')">提交</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+    </div>
+    <script>
+        Vue.filter('formatLocalDateTime', function(value) {
+            if (value == null) {
+                return '-'
+            }
+            const [year, month, day, hour, minute, second] = value;
+            return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
+        });
+        new Vue({
+            el: '#creditRatingUserApproval-app',
+            data() {
+                return {
+                    ruleForm : {
+                        'creditRating': '',
+                    },
+                    id : '',
+                    user : {},
+                    rules: {
+                        creditRating: [
+                            { type: 'array' , required: true, validator: (rule, value, callback) => {
+                                    if (value.length !== 2) {
+                                        callback(new Error('请选择信用等级'));
+                                    } else {
+                                        callback();
+                                    }
+                                }, trigger: 'change'},
+                        ],
+                    },
+                    coreEnterpriseData : {},
+                    contractInfo : {},
+                    coreEnterpriseId : '',
+                    creditRatingOptions: [{
+                        label: 'A',
+                        children: [
+                        { value: 'AAA', label: 'AAA' },
+                        { value: 'AA', label: 'AA' },
+                        { value: 'A', label: 'A' }]
+                    }, {
+                        label: 'B',
+                        children: [{
+                            value: 'BBB',
+                            label: 'BBB',
+                        },{
+                            value: 'BB',
+                            label: 'BB',
+                        },{
+                            value: 'B',
+                            label: 'B',
+                        }]
+                    },{
+                        label: 'C',
+                        children: [{
+                            value: 'CCC',
+                            label: 'CCC',
+                        },{
+                            value: 'CC',
+                            label: 'CC',
+                        },{
+                            value: 'C',
+                            label: 'C',
+                        }]
+                    },{
+                        label: 'D',
+                        children: [{
+                            value: 'D',
+                            label: 'D',
+                        }]
+                    }
+                    ],
+                }
+            },
+            computed: {},
+            created() {
+                const userInfo = window.sessionStorage.getItem('userInfo')
+                if (userInfo) {
+                    this.user = JSON.parse(userInfo)
+                    this.coreEnterpriseId = encodeURIComponent(requestUrlParam('id'))
+                }
+                this.init()
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const coreEnterpriseDataRes = await getCompanyDetail(this.coreEnterpriseId)
+                    if (String(coreEnterpriseDataRes.code) === '1') {
+                        this.coreEnterpriseData = coreEnterpriseDataRes.data || '';
+                        console.log(this.coreEnterpriseData);
+                    }
+                },
+                handleQuery() {
+                    this.init();
+                },
+                handleCreditRatingChange(value) {
+                    // value 是用户选择的最后一级选项的值，将其传递给需要的地方
+                    console.log('用户选择的信用等级:', value[value.length - 1]);
+                    // 在这里可以将 value 传递给需要的地方
+                    this.ruleForm.creditRating = value[value.length - 1];
+                },
+                formatCompanyType(value) {
+                    const companyTypeMap = {
+                        CORE_ENTERPRISE: '核心企业',
+                        SMEs: '中小企业',
+                        FINANCIAL_INSTITUTION: '金融机构',
+                        LOGISTICS_COMPANY: '物流公司',
+                        // 添加更多类型的映射关系
+                    };
+                    return companyTypeMap[value] || '';
+                },
+                //
+                submitForm(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            const params = {
+                                creditRating: this.ruleForm.creditRating,
+                            }
+                            console.log(params)
+                            saveCoreEnterpriseCreditRating(this.coreEnterpriseId, params).then(res => {
+                                if (res.code === 1) {
+                                    this.$message.success('信用等级评估成功！')
+                                    this.goBack()
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+                        } else {
+                            console.log('error submit!!');
+                        }
+                    });
+                },
+                goBack() {
+                    window.parent.menuHandle({
+                        id: '3',
+                        url: '/front/page/coreEnterprise/user/creditRatingList.html',
+                        name: '信用等级评估'
+                    },false)
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
+                },
+            }
+        })
+    </script>
+</body>
+</html>

@@ -5,3 +5,10 @@ function getFinancialInstitutionPage(params) {
         params,
     });
 }
+
+function getFinancialInstitutionList() {
+    return $axios({
+        url: '/financialInstitution/list',
+        method: 'get',
+    });
+}

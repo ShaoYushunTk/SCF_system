@@ -240,10 +240,10 @@ public class CompanyController {
 
     @GetMapping("/list")
     public Result list(
-            CompanyType companyType
+            String companyType
     ) {
         LambdaQueryWrapper<Company> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(StringUtils.isNotEmpty(companyType.toString()), Company::getCompanyType, companyType);
+        lambdaQueryWrapper.eq(StringUtils.isNotEmpty(companyType), Company::getCompanyType, companyType);
         List<Company> companyList = companyService.list(lambdaQueryWrapper);
         return Result.success(companyList);
     }

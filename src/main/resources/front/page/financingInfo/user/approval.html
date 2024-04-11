@@ -7,22 +7,22 @@
     <title>Document</title>
     <!-- 引入样式 -->
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
-    <link rel="stylesheet" href="../../styles/common.css" />
-    <link rel="stylesheet" href="../../styles/page.css" />
+    <link rel="stylesheet" href="../../../styles/common.css" />
+    <link rel="stylesheet" href="../../../styles/page.css" />
 </head>
 <body>
     <!-- 开发环境版本，包含了有帮助的命令行警告 -->
-    <script src="../../plugins/vue/vue.js"></script>
+    <script src="../../../plugins/vue/vue.js"></script>
     <!-- 引入组件库 -->
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
     <!-- 引入axios -->
-    <script src="../../plugins/axios/axios.min.js"></script>
-    <script src="../../js/request.js"></script>
-    <script src="../../api/company.js"></script>
-    <script src="../../api/user.js"></script>
-    <script src="../../api/financingInfo.js"></script>
-    <script src="../../js/index.js"></script>
-    <div class="dashboard-container" id="financingInfoDetail-app">
+    <script src="../../../plugins/axios/axios.min.js"></script>
+    <script src="../../../js/request.js"></script>
+    <script src="../../../api/company.js"></script>
+    <script src="../../../js/index.js"></script>
+    <script src="../../../api/financingInfo.js"></script>
+    <script src="../../../api/financialInstitution.js"></script>
+    <div class="dashboard-container" id="financingInfoUserApproval-app">
         <div class="container">
             <el-descriptions title="融资信息" :column="3" border>
                 <el-descriptions-item prop="companyName">
@@ -31,13 +31,6 @@
                         融资企业名称
                     </template>
                     {{ this.financingInfoData.companyName || '' }}
-                </el-descriptions-item>
-                <el-descriptions-item prop="financialInstitutionName">
-                    <template slot="label">
-                        <i class="el-icon-office-building"></i>
-                        金融机构名称
-                    </template>
-                    {{ this.financingInfoData.financialInstitutionName || '' }}
                 </el-descriptions-item>
                 <el-descriptions-item prop="applyTime">
                     <template slot="label">
@@ -60,34 +53,6 @@
                     </template>
                     {{ formatFinancingType(this.financingInfoData.financingType) || '' }}
                 </el-descriptions-item>
-                <el-descriptions-item prop="approvalStatus">
-                    <template slot="label">
-                        <i class="el-icon-s-finance"></i>
-                        审批状态
-                    </template>
-                    {{ formatApprovalStatus(this.financingInfoData.approvalStatus) || '' }}
-                </el-descriptions-item>
-                <el-descriptions-item prop="approvalTime">
-                    <template slot="label">
-                        <i class="el-icon-coordinate"></i>
-                        审批时间
-                    </template>
-                    {{ this.financingInfoData.approvalTime | formatLocalDateTime }}
-                </el-descriptions-item>
-                <el-descriptions-item prop="approvalComment">
-                    <template slot="label">
-                        <i class="el-icon-s-comment"></i>
-                        审批备注
-                    </template>
-                    {{ this.financingInfoData.approvalComment || '' }}
-                </el-descriptions-item>
-                <el-descriptions-item prop="loanTime">
-                    <template slot="label">
-                        <i class="el-icon-date"></i>
-                        放款时间
-                    </template>
-                    {{ this.financingInfoData.loanTime | formatLocalDateTime }}
-                </el-descriptions-item>
                 <el-descriptions-item prop="interestRate">
                     <template slot="label">
                         <i class="el-icon-coin"></i>
@@ -95,28 +60,32 @@
                     </template>
                     {{ this.financingInfoData.interestRate || '' }}
                 </el-descriptions-item>
-                <el-descriptions-item prop="isRepay">
-                    <template slot="label">
-                        <i class="el-icon-coin"></i>
-                        是否还款
-                    </template>
-                    {{ this.financingInfoData.isRepay === true ? '是' : '否' }}
-                </el-descriptions-item>
-                <el-descriptions-item prop="repayTime">
-                    <template slot="label">
-                        <i class="el-icon-date"></i>
-                        还款时间
-                    </template>
-                    {{ this.financingInfoData.repayTime | formatLocalDateTime }}
-                </el-descriptions-item>
-                <el-descriptions-item prop="repayAccount">
-                    <template slot="label">
-                        <i class="el-icon-money"></i>
-                        还款金额
-                    </template>
-                    {{ this.financingInfoData.repayAccount || '' }}
-                </el-descriptions-item>
             </el-descriptions>
+
+        </div>
+        <div class="container">
+            <!-- 标题区域 -->
+            <el-row>
+                <el-col :span="24">
+                    <h2 style="margin-bottom: 20px; font-size: 16px;">融资审批</h2>
+                </el-col>
+            </el-row>
+            <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+                <el-form-item label="审批状态" prop="approvalStatus">
+                    <el-radio-group v-model="ruleForm.approvalStatus">
+                        <el-radio label="同意"></el-radio>
+                        <el-radio label="拒绝"></el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="审批备注" prop="approvalComment">
+                    <el-input v-model="ruleForm.approvalComment"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="goBack()">取消</el-button>
+                    <el-button type="primary" @click="submitForm('ruleForm')">提交</el-button>
+                    <el-button type="primary" @click="resetForm('ruleForm')">重置</el-button>
+                </el-form-item>
+            </el-form>
         </div>
     </div>
     <script>
@@ -128,12 +97,24 @@
             return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
         });
         new Vue({
-            el: '#financingInfoDetail-app',
+            el: '#financingInfoUserApproval-app',
             data() {
                 return {
-                    financingInfoData : {},
+                    ruleForm : {
+                        'approvalStatus': '',
+                        'approvalComment': '',
+                    },
                     id : '',
                     user : {},
+                    rules: {
+                        approvalStatus: [
+                            {required: true, message: '请选择审批状态', trigger: 'change'},
+                        ],
+                        approvalComment: [
+                            {required: true, message: '请输入审批备注', trigger: 'change'},
+                        ],
+                    },
+                    financingInfoData : {},
                     financingInfoId : '',
                 }
             },
@@ -155,29 +136,52 @@
                     if (String(financingInfoRes.code) === '1') {
                         this.financingInfoData = financingInfoRes.data || ''
                     }
-
                 },
                 handleQuery() {
-                    this.page = 1;
                     this.init();
                 },
-                formatFinancingType (value) {
+                //
+                submitForm(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            const params = {
+                                approvalStatus: this.ruleForm.approvalStatus === '同意' ? 'APPROVE' : 'REJECT',
+                                approvalComment: this.ruleForm.approvalComment
+                            }
+                            console.log(params)
+                            approvalFinancingInfo(this.financingInfoId, params).then(res => {
+                                if (res.code === 1) {
+                                    this.$message.success('融资信息审批成功！')
+                                    this.goBack()
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+                        } else {
+                            console.log('error submit!!');
+                        }
+                    });
+                },
+                formatFinancingType (val) {
                     const financingTypeMap = {
                         ACCOUNTS_RECEIVABLE: '应收账款融资',
                         PURCHASE_ORDER: '采购订单融资',
                         SUPPLY_CHAIN: '供应链融资',
                         // 添加更多类型的映射关系
                     };
-                    return financingTypeMap[value] || '';
+                    return financingTypeMap[val] || '';
                 },
-                formatApprovalStatus (value) {
-                    const approvalTypeMap = {
-                        PENDING: '待审批',
-                        APPROVE: '审批通过',
-                        REJECT: '审批拒绝',
-                        // 添加更多类型的映射关系
-                    };
-                    return approvalTypeMap[value] || '';
+                goBack() {
+                    window.parent.menuHandle({
+                        id: '2',
+                        url: '/front/page/financingInfo/user/approvalList.html',
+                        name: '融资审批'
+                    },false)
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
                 },
             }
         })

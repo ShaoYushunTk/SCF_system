@@ -16,7 +16,7 @@ import java.util.concurrent.TimeoutException;
  */
 public interface FinancingInfoService extends IService<FinancingInfo> {
     Result create(FinancingInfo financingInfo);
-    Result approve(String id, ApprovalStatus approvalStatus, String approvalComment);
+    Result approve(String id, String approvalStatus, String approvalComment);
     Result loan(String id) throws InterruptedException, TimeoutException;
 
     Result repay(String id) throws InterruptedException, TimeoutException;
@@ -32,4 +32,6 @@ public interface FinancingInfoService extends IService<FinancingInfo> {
     Result deleteFinancingInfoById(String id);
 
     Result getFinancingInfoByCompanyId(String id, int page, int pageSize);
+
+    Result getFinancingInfoByFinancialInstitutionId(String id, int page, int pageSize);
 }

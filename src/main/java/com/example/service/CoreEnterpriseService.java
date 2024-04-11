@@ -22,4 +22,6 @@ public interface CoreEnterpriseService extends IService<CoreEnterprise> {
     Boolean removeByCompanyId(String id);
 
     Result page(int page, int pageSize, String name, String creditRating);
+
+    Result getCompanyCreditRatingById(String id);
 }

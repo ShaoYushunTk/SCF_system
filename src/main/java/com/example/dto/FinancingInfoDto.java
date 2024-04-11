@@ -11,4 +11,5 @@ import lombok.Data;
 public class FinancingInfoDto extends FinancingInfo {
     private String companyName;
     private String financialInstitutionName;
+    private String approvalName;
 }

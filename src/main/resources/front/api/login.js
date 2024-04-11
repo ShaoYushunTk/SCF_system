@@ -21,6 +21,13 @@ function userLoginApi(data) {
   });
 }
 
+function userLogoutApi(){
+  return $axios({
+    'url': '/user/logout',
+    'method': 'post',
+  })
+}
+
 function sendMsg(data) {
   return $axios({
     url: '/user/sendMsg',

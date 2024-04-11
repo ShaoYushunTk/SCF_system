@@ -12,9 +12,11 @@ import com.example.exception.CommonException;
 import com.example.properties.SmsProperties;
 import com.example.service.CompanyService;
 import com.example.service.UserService;
+import com.example.utils.DataMaskingUtils;
 import com.example.utils.SMSUtils;
 import com.example.utils.UUIDUtils;
 import com.example.utils.ValidateCodeUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -22,6 +24,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.MessageDigest;
@@ -112,9 +115,8 @@ public class UserController {
             // 根据企业id拿到类型
             CompanyType companyType = companyService.getById(user.getCompanyId()).getCompanyType();
 
-            Map <String, String> m = new HashMap<>();
-            m.put("phone", phone);
-            m.put("code", code);
+            Map <String, Object> m = new HashMap<>();
+            m.put("user", user);
             m.put("companyType", companyType.toString());
             return Result.success(m);
         }
@@ -124,7 +126,8 @@ public class UserController {
     @PostMapping("/register")
     public Result<Map> register(
             @RequestBody
-            UserRegisterDto userRegisterDto
+            UserRegisterDto userRegisterDto,
+            HttpSession httpSession
     ) {
         log.info(userRegisterDto.toString());
 
@@ -155,10 +158,18 @@ public class UserController {
         BeanUtils.copyProperties(userRegisterDto, user);
         userService.save(user);
 
+        httpSession.setAttribute("user",user.getId());
+
         Map <String, Object> m = new HashMap<>();
-        m.put("userInfo", user);
+        m.put("user", user);
         m.put("companyType", userRegisterDto.getCompanyType().toString());
         return Result.success(m);
+    }
+
+    @PostMapping("/logout")
+    public Result<String> logout(HttpServletRequest request){
+        request.getSession().removeAttribute("userInfo");
+        return Result.success("退出成功");
     }
 
     @GetMapping("/page")
@@ -183,6 +194,8 @@ public class UserController {
             userDto.setCompanyName(byId.getName());
             userDto.setCompanyType(byId.getCompanyType());
             BeanUtils.copyProperties(it, userDto);
+            String bankNumber = userDto.getBankNumber();
+            userDto.setMaskedBankNumber(DataMaskingUtils.bankCard(bankNumber));
             return userDto;
         }).collect(Collectors.toList());
 
@@ -228,6 +241,7 @@ public class UserController {
     }
 
     @PostMapping("/{id}/update")
+    @Transactional
     public Result update(
             @PathVariable
             String id,
@@ -238,9 +252,39 @@ public class UserController {
         if (byId == null) {
             throw new CommonException("用户不存在");
         }
-        user.setId(id);
+
+        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(User::getPhone, user.getPhone());
+        lambdaQueryWrapper.eq(User::getCompanyId, user.getCompanyId());
+        List<User> userList = userService.list(lambdaQueryWrapper);
+        for (User existingUser : userList) {
+            // 排除当前用户自身
+            if (!existingUser.getId().equals(user.getId())) {
+                throw new CommonException("当前企业下已存在相同手机号的用户");
+            }
+        }
+
         userService.updateById(user);
         return Result.success("更新成功");
+    }
+
+    @GetMapping("/{id}")
+    public Result getUserById(
+            @PathVariable
+            String id
+    ) {
+        User byId = userService.getById(id);
+        if (byId == null) {
+            throw new CommonException("用户不存在");
+        }
+        UserDto dto = new UserDto();
+        BeanUtils.copyProperties(byId, dto);
+        Company company = companyService.getById(dto.getCompanyId());
+        dto.setCompanyName(company.getName());
+        dto.setCompanyType(company.getCompanyType());
+        String bankNumber = dto.getBankNumber();
+        dto.setMaskedBankNumber(DataMaskingUtils.bankCard(bankNumber));
+        return Result.success(dto);
     }
 
 }

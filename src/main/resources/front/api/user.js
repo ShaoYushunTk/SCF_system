@@ -13,3 +13,18 @@ function updateUserStatus(id, params) {
         params,
     });
 }
+
+function getUserById(id) {
+    return $axios({
+        url: `/user/${id}`,
+        method: 'get',
+    });
+}
+
+function updateUserById(id, params) {
+    return $axios({
+        url: `/user/${id}/update`,
+        method: 'post',
+        data: params
+    });
+}

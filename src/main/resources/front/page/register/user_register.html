@@ -146,7 +146,7 @@
                         if(res.code === 1){
                             sessionStorage.setItem("userPhone",this.registerForm.phone)
                             sessionStorage.setItem("userCode",this.registerForm.code)
-                            sessionStorage.setItem("userInfo", res.data.userInfo)
+                            sessionStorage.setItem("userInfo", JSON.stringify(res.data.user))
                             sessionStorage.setItem("companyType", this.registerForm.companyType)
                             window.requestAnimationFrame(()=>{
                                 let companyType = this.registerForm.companyType;

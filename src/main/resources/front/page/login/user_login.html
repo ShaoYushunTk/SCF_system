@@ -104,7 +104,8 @@
                         const res = await userLoginApi({phone:this.loginForm.phone, code:this.loginForm.code})
                         this.loading = false
                         if(res.code === 1){
-                            sessionStorage.setItem("userInfo", this.loginForm)
+                            console.log(res.data)
+                            sessionStorage.setItem("userInfo", JSON.stringify(res.data.user))
                             sessionStorage.setItem("companyType", res.data.companyType)
                             window.requestAnimationFrame(()=>{
                                 let companyType = res.data.companyType;

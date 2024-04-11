@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="../../../styles/common.css" />
+    <link rel="stylesheet" href="../../../styles/page.css" />
+</head>
+<body>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../../plugins/axios/axios.min.js"></script>
+    <script src="../../../js/request.js"></script>
+    <script src="../../../api/company.js"></script>
+    <script src="../../../js/index.js"></script>
+    <script src="../../../api/orders.js"></script>
+    <div class="dashboard-container" id="OrderUserAdd-app">
+        <div class="container">
+            <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+                <el-form-item label="支付方" prop="payer">
+                    <el-select v-model="ruleForm.payer" placeholder="请选择支付方" clearable @change="handleSelectChange('payer')">
+                        <el-option v-for="company in this.allCompanyList" :key="company.id" :label="company.name" :value="company.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="收款方" prop="receiver">
+                    <el-select v-model="ruleForm.receiver" placeholder="请选择收款方" clearable :disabled="!ruleForm.payer" @change="handleSelectChange('receiver')">
+                        <el-option v-for="company in this.restCompanyList" :key="company.id" :label="company.name" :value="company.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="物流公司" prop="logisticsProviderId">
+                    <el-select v-model="ruleForm.logisticsProviderId" placeholder="请选择物流公司" clearable @change="validateForm('logisticsProviderId')">
+                        <el-option v-for="company in this.logisticsProviderList" :key="company.id" :label="company.name" :value="company.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="订单备注" prop="remark">
+                    <el-input v-model="ruleForm.remark" placeholder="请输入订单备注"></el-input>
+                </el-form-item>
+                <el-form-item label="商品列表" prop="goodsList">
+                    <el-row v-for="(goods, index) in ruleForm.goodsList" :key="index" :class="{'row-error': goodsError[index]}">
+                        <el-col :span="6">
+                            <el-form-item :prop="'goodsList.' + index + '.name'" :rules="{ required: true, message: '请输入商品名称', trigger: 'blur' }">
+                                <el-input v-model="goods.name" placeholder="商品名称"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="6">
+                            <el-form-item :prop="'goodsList.' + index + '.number'" :rules="{ required: true, message: '请输入商品数量', trigger: 'blur', validator: validateNumber }">
+                                <el-input v-model="goods.number" placeholder="商品数量"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="6">
+                            <el-form-item :prop="'goodsList.' + index + '.price'" :rules="{ required: true, message: '请输入商品价格', trigger: 'blur', validator: validatePrice }">
+                                <el-input v-model="goods.price" placeholder="商品价格"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="6">
+                            <el-button @click="removeGoods(index)">移除</el-button>
+                        </el-col>
+                    </el-row>
+                    <el-button @click="addGoods">添加商品</el-button>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="goBack()">取消</el-button>
+                    <el-button type="primary" @click="submitForm('ruleForm')">保存</el-button>
+                    <el-button type="primary" @click="resetForm('ruleForm')">重置</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: '#OrderUserAdd-app',
+            data() {
+                return {
+                    ruleForm : {
+                        'payer': '',
+                        'receiver': '',
+                        'goodsList': [],
+                        'logisticsProviderId': '',
+                        'remark': '',
+                    },
+                    id : '',
+                    user : {},
+                    companyId : '',
+                    allCompanyList : [],
+                    restCompanyList : [],
+                    logisticsProviderList : [],
+                    rules: {
+                        payer: [
+                            {required: true, message: '请选择支付方', trigger: 'change'},
+                        ],
+                        receiver: [
+                            {required: true, message: '请选择收款方', trigger: 'change'},
+                        ],
+                        goodsList: [
+
+                        ],
+                        logisticsProviderId: [
+                            {required: true, message: '请选择物流公司', trigger: 'change'},
+                        ],
+                    },
+                    goodsError: []
+                }
+            },
+            computed: {},
+            created() {
+                const userInfo = window.sessionStorage.getItem('userInfo')
+                if (userInfo) {
+                    this.user = JSON.parse(userInfo)
+                    this.companyId = encodeURIComponent(this.user.companyId)
+                }
+                this.init()
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const logisticsProviderRes = await getCompanyList({companyType: "LOGISTICS_COMPANY"})
+                    if (String(logisticsProviderRes.code) === '1') {
+                        this.logisticsProviderList = logisticsProviderRes.data
+                    } else {
+                        this.$message.error('请求出错了：' + String(logisticsProviderRes.msg))
+                    }
+
+                    const smesRes = await getCompanyList({ companyType: "SMEs" });
+                    if (String(smesRes.code) === '1') {
+                        this.allCompanyList = smesRes.data;
+                    } else {
+                        this.$message.error('请求出错了：' + String(smesRes.msg));
+                    }
+
+                    // 获取CORE_ENTERPRISE类型的公司列表
+                    const ceRes = await getCompanyList({ companyType: "CORE_ENTERPRISE" });
+                    if (String(ceRes.code) === '1') {
+                        // 将获取到的CORE_ENTERPRISE类型的公司列表追加到allCompanyList中
+                        this.allCompanyList = this.allCompanyList.concat(ceRes.data);
+                    } else {
+                        this.$message.error('请求出错了：' + String(ceRes.msg));
+                    }
+
+                },
+                handleQuery() {
+                    this.init();
+                },
+                // 添加
+                validateNumber(rule, value, callback) {
+                    // 检查商品数量是否为正整数
+                    const reg = /^[1-9]\d*$/;
+                    console.log(value)
+                    if (!reg.test(value)) {
+                        callback(new Error('商品数量必须为正整数'));
+                    } else {
+                        callback();
+                    }
+                },
+                validatePrice(rule, value, callback) {
+                    // 检查商品价格是否为数字且大于0
+                    console.log(value)
+                    if (isNaN(value) || value <= 0) {
+                        callback(new Error('商品价格必须为大于0的数字'));
+                    } else {
+                        callback();
+                    }
+                },
+                // 处理选择下拉框的变化事件
+                handleSelectChange(type) {
+                    if (type === 'payer') {
+                        // 当选择支付方时，更新剩余公司列表
+                        this.restCompanyList = this.allCompanyList.filter(company => company.id !== this.ruleForm.payer);
+                        // 如果收款方下拉框当前没有选择项，则清空收款方
+                        if (!this.ruleForm.receiver) {
+                            this.ruleForm.receiver = '';
+                        }
+                    } else if (type === 'receiver') {
+                        // 当选择收款方时，更新剩余公司列表
+                        this.restCompanyList = this.allCompanyList.filter(company => company.id !== this.ruleForm.receiver);
+                    }
+                },
+                addGoods() {
+                    this.ruleForm.goodsList.push({ name: '', number: '', price: '' });
+                },
+                removeGoods(index) {
+                    this.ruleForm.goodsList.splice(index, 1);
+                },
+                validateForm(field) {
+                    this.$refs.ruleForm.validateField(field);
+                },
+                submitForm() {
+                    this.$refs.ruleForm.validate((valid) => {
+                        if (valid) {
+                            // 表单校验通过，可以提交数据
+                            const params = {
+                                ...this.ruleForm
+                            }
+                            createOrder(params).then(res => {
+                                if (res.code === 1) {
+                                    this.$message.success('订单提交成功！')
+                                    this.goBack()
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+                        } else {
+                            // 表单校验失败，处理错误信息
+                            console.log('error submit!!');
+                        }
+                    });
+                },
+                goBack() {
+                    window.parent.menuHandle({
+                        id: '2',
+                        url: '/front/page/order/user/list.html',
+                        name: '订单记录'
+                    },false)
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
+                },
+            }
+        })
+    </script>
+</body>
+</html>

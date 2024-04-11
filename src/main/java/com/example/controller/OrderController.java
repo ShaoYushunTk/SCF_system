@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -94,7 +95,7 @@ public class OrderController {
     public Result pay(
             @PathVariable
             String id
-    ) {
+    ) throws InterruptedException, TimeoutException {
         return ordersService.payOrder(id);
     }
 
@@ -102,8 +103,8 @@ public class OrderController {
     public Result updateStatus(
             @PathVariable
             String id,
-            @RequestBody
-            OrderStatus orderStatus
+            @RequestParam
+            String orderStatus
     ) {
         return ordersService.updateStatus(id, orderStatus);
     }
@@ -139,6 +140,39 @@ public class OrderController {
         queryWrapper.eq(Orders::getPayer, id)
                 .or()
                 .eq(Orders::getReceiver, id);
+        ordersService.page(pageInfo, queryWrapper);
+
+        BeanUtils.copyProperties(pageInfo, dtoPage, "records");
+        List<OrderDto> records = pageInfo.getRecords().stream().map((it) -> {
+            OrderDto dto = new OrderDto();
+            BeanUtils.copyProperties(it, dto);
+
+            dto.setPayerName(companyService.getById(it.getPayer()).getName());
+            dto.setReceiverName(companyService.getById(it.getReceiver()).getName());
+            dto.setReceiverPhone(companyService.getById(it.getReceiver()).getContactInfo().getPhone());
+            dto.setReceiverAddress(companyService.getById(it.getReceiver()).getContactInfo().getAddress());
+            dto.setLogisticProviderName(companyService.getById(it.getLogisticsProviderId()).getName());
+            return dto;
+        }).toList();
+
+        dtoPage.setRecords(records);
+        dtoPage.setTotal(records.size());
+        return Result.success(dtoPage);
+    }
+
+    @GetMapping("/logisticProvider/{id}")
+    public Result getOrdersByLogisticProviderId(
+            @PathVariable
+            String id,
+            int page,
+            int pageSize
+    ) {
+        Page<Orders> pageInfo = new Page<>(page, pageSize);
+        Page<OrderDto> dtoPage = new Page<>(page, pageSize);
+
+        LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByDesc(Orders::getOrderTime);
+        queryWrapper.eq(Orders::getLogisticsProviderId, id);
         ordersService.page(pageInfo, queryWrapper);
 
         BeanUtils.copyProperties(pageInfo, dtoPage, "records");
