@@ -6,7 +6,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Title</title>
     <!-- 引入 Element UI 的样式文件 -->
-    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css">
+    <style>
+        body{
+            background: linear-gradient(to right,#65C8F7, #83A5FC);
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-box{
+            width: 60%;
+            height: 450px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, .8);
+            display: flex;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .left{
+            width: 60%;
+        }
+        .left>img{
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .right{
+            width: 40%;
+            height: 100%;
+            background-color: #fff;
+            box-sizing: border-box;
+            padding: 0 20px;
+        }
+        h1{
+            text-align: center;
+            padding-top: 45px;
+            margin-top: 0;
+        }
+        .inputItem{
+            height: 44px;
+            padding: 0;
+            border: none;
+            background: none;
+            outline: none;
+            width: 100%;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        .userLogin{
+            margin-top: 50px;
+            color: #9c3493;
+            text-align: right;
+            display: block;
+            text-decoration: none;
+        }
+        .login-btn{
+            background: linear-gradient(to right,#65C8F7, #83A5FC);
+            color: #9c3493;
+            font-weight: bold;
+            border: none;
+            border-radius: 30px;
+            height: 46px;
+            width: 80%;
+            font-size: 18px;
+            display: block;
+            margin: auto;
+            margin-top: 0px;
+        }
+    </style>
 </head>
 <body>
     <!-- 开发环境版本，包含了有帮助的命令行警告 -->
@@ -21,31 +90,38 @@
 
     <div class="login" id="login-app">
         <div class="login-box">
-            <el-form ref="loginForm" :model="loginForm" :rules="loginRules" label-width="80px">
-                <el-form-item label="Company Type" prop="companyType">
-                    <el-select v-model="loginForm.companyType" placeholder="Select company type">
-                        <el-option label="系统管理员" value="SYSTEM_ADMIN"></el-option>
-                        <el-option label="中小企业（融资方）" value="SMEs"></el-option>
-                        <el-option label="核心企业（债务人）" value="CORE_ENTERPRISE"></el-option>
-                        <el-option label="金融机构（资金方）" value="FINANCIAL_INSTITUTION"></el-option>
-                        <el-option label="物流公司" value="LOGISTICS_COMPANY"></el-option>
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="Username" prop="username">
-                    <el-input v-model="loginForm.username"></el-input>
-                </el-form-item>
-                <el-form-item label="Password" prop="password">
-                    <el-input type="password" v-model="loginForm.password"></el-input>
-                </el-form-item>
-                <el-form-item style="width:100%;">
-                    <el-button :loading="loading" class="login-btn" size="medium" type="primary" style="width:100%;"
-                               @click.native.prevent="handleLogin">
-                        <span v-if="!loading">登录</span>
-                        <span v-else>登录中...</span>
-                    </el-button>
-                </el-form-item>
-            </el-form>
-            <a href="user_login.html">普通用户登录</a>
+            <div class="left">
+                <img src="../../images/1.jpg" alt="">
+            </div>
+            <div class="right">
+                <h1>Login</h1>
+                <el-form ref="loginForm" :model="loginForm" :rules="loginRules" label-width="80px">
+                    <el-form-item prop="companyType" label="login type">
+                        <el-select v-model="loginForm.companyType">
+                            <el-option label="Select login type" value=""></el-option>
+                            <el-option label="系统管理员" value="SYSTEM_ADMIN"></el-option>
+                            <el-option label="中小企业（融资方）" value="SMEs"></el-option>
+                            <el-option label="核心企业（债务人）" value="CORE_ENTERPRISE"></el-option>
+                            <el-option label="金融机构（资金方）" value="FINANCIAL_INSTITUTION"></el-option>
+                            <el-option label="物流公司" value="LOGISTICS_COMPANY"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item prop="username" class="inputItem" label="account">
+                        <el-input type="test" v-model="loginForm.username"></el-input>
+                    </el-form-item>
+                    <el-form-item prop="password" class="inputItem" label="password">
+                        <el-input type="password" v-model="loginForm.password"></el-input>
+                    </el-form-item>
+                    <el-form-item style="width:100%;">
+                        <el-button :loading="loading" class="login-btn" size="medium" type="primary" style="width:100%;"
+                                @click.native.prevent="handleLogin">
+                            <span v-if="!loading">login</span>
+                            <span v-else>Loading...</span>
+                        </el-button>
+                    </el-form-item>
+                </el-form>
+                <a href="user_login.html" class="userLogin">User login</a>
+            </div>
         </div>
     </div>
 
@@ -55,9 +131,9 @@
             data() {
                 return {
                     loginForm: {
-                        companyType: 'SYSTEM_ADMIN',
-                        username: 'admin',
-                        password: 'admin'
+                        companyType: '',
+                        username: '',
+                        password: ''
                     },
                     loading: false,
                 };

@@ -6,7 +6,114 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Title</title>
     <!-- 引入 Element UI 的样式文件 -->
-    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css">
+    <style>
+        body{
+            background: linear-gradient(to right,#65C8F7, #83A5FC);
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-box{
+            width: 60%;
+            height: 450px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, .8);
+            display: flex;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .left{
+            width: 60%;
+        }
+        .left>img{
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .right{
+            width: 40%;
+            height: 100%;
+            background-color: #fff;
+            box-sizing: border-box;
+            padding: 0 20px;
+            margin: auto;
+        }
+        h1{
+            text-align: center;
+            padding-top: 45px;
+            margin-top: 0;
+        }
+        .inputItem{
+            height: 44px;
+            padding: 0;
+            border: none;
+            background: none;
+            outline: none;
+            width: 100%;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        .codeValidate{
+            width: 100%;
+            display: flex; 
+            align-items: flex-start;
+        }
+        .inputItemCode{
+            height: 44px;
+            padding: 0;
+            border: none;
+            background: none;
+            outline: none;
+            flex-grow: 1;
+            font-size: 18px;
+        }
+        .sendCode{
+            background: linear-gradient(to right,#65C8F7, #83A5FC);
+            color: #9c3493;
+            font-weight: bold;
+            border: none;
+            border-radius: 30px;
+            height: 40px;
+            width: 35%;
+            margin-left: 5px;
+        }
+        .pageJump{
+            width: 100%;
+            display: flex; 
+            align-items: flex-start;
+            margin-top: 110px;
+            margin-left: 90px;
+        }
+        .adminLogin{
+            color: #9c3493;
+            text-align: right;
+            display: block;
+            text-decoration: none;
+        }
+        .userRegister{
+            margin-left: 10px;
+            color: #9c3493;
+            text-align: right;
+            display: block;
+            text-decoration: none;
+        }
+        .login-btn{
+            background: linear-gradient(to right,#65C8F7, #83A5FC);
+            color: #9c3493;
+            font-weight: bold;
+            border: none;
+            border-radius: 30px;
+            height: 46px;
+            width: 80%;
+            font-size: 18px;
+            display: block;
+            margin: auto;
+            margin-top: 0px;
+        }
+    </style>
 </head>
 <body>
     <!-- 开发环境版本，包含了有帮助的命令行警告 -->
@@ -18,25 +125,41 @@
     <script src="../../js/request.js"></script>
     <script src="../../js/validate.js"></script>
     <script src="../../api/login.js"></script>
-    <div id="user-login">
-        <el-form ref="loginForm" :model="loginForm" label-width="80px" :rules="loginRules">
-            <el-form-item label="phone" prop="phone">
-                <el-input v-model="loginForm.phone"></el-input>
-            </el-form-item>
-            <el-form-item label="code" prop="code">
-                <el-input v-model="loginForm.code"></el-input>
-                <el-button type="primary" @click="sendCode" :disabled="disableSendCode">{{ sendCodeText }}</el-button>
-            </el-form-item>
-            <el-form-item style="width:100%;">
-                <el-button :loading="loading" class="login-btn" size="medium" type="primary" style="width:100%;"
-                           @click.native.prevent="handleLogin">
-                    <span v-if="!loading">登录</span>
-                    <span v-else>登录中...</span>
-                </el-button>
-            </el-form-item>
-        </el-form>
-        <a href="emp_login.html">管理员登录</a>
-        <a href="./../register/user_register.html">普通用户注册</a>
+    <div class="login-box" id="user-login">
+        <div class="left">
+            <img src="../../images/1.jpg" alt="">
+        </div>
+        <div class="right">
+            <h1>Login</h1>
+            <el-form class="loginForm" ref="loginForm" :model="loginForm" label-width="80px" :rules="loginRules">
+                <el-form-item label="phone" prop="phone" class="inputItem">
+                    <el-input v-model="loginForm.phone"></el-input>
+                </el-form-item>
+                <div class="codeValidate">
+                    <el-form-item label="code" prop="code" class="inputItemCode">
+                        <el-input v-model="loginForm.code"></el-input>
+                    </el-form-item>
+                    <el-button class="sendCode" type="primary" @click="sendCode" :disabled="disableSendCode">{{ sendCodeText }}</el-button>
+                </div>
+                <!-- <el-form-item label="code" prop="code" class="inputItem">
+                    <el-input v-model="loginForm.code"></el-input>
+                </el-form-item>
+                <el-form-item class="sendCode">
+                    <el-button type="primary" @click="sendCode" :disabled="disableSendCode">{{ sendCodeText }}</el-button>
+                </el-form-item> -->
+                <el-form-item style="width:100%;">
+                    <el-button :loading="loading" class="login-btn" size="medium" type="primary" style="width:100%;"
+                            @click.native.prevent="handleLogin">
+                        <span v-if="!loading">login</span>
+                        <span v-else>loading...</span>
+                    </el-button>
+                </el-form-item>
+            </el-form>
+            <div class="pageJump">
+                <a href="emp_login.html" class="adminLogin">Admin login</a>
+                <a href="./../register/user_register.html" class="userRegister">User register</a>
+            </div>
+        </div>
     </div>
     <script>
         new Vue({
@@ -47,7 +170,7 @@
                         phone: '',
                         code: ''
                     },
-                    sendCodeText: '发送验证码',
+                    sendCodeText: 'Send',
                     disableSendCode: false,
                     loading: false
                 }
