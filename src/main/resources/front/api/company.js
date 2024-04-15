@@ -22,6 +22,14 @@ function updateCompanyBasic(id, params) {
     });
 }
 
+function updateCompanyDetail(id, params) {
+    return $axios({
+        url: `/company/${id}/updateDetail`,
+        method: 'post',
+        data: { ...params },
+    });
+}
+
 function getCompanyDetail(id) {
     return $axios({
         url: `/company/${id}`,

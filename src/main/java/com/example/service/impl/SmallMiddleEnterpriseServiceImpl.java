@@ -13,6 +13,7 @@ import com.example.exception.CommonException;
 import com.example.mapper.SmallMiddleEnterpriseMapper;
 import com.example.service.*;
 import com.example.utils.CommonUtils;
+import com.example.utils.DataMaskingUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,7 +96,9 @@ public class SmallMiddleEnterpriseServiceImpl extends ServiceImpl<SmallMiddleEnt
     ) {
         Page<SmallMiddleEnterprise> smallMiddleEnterprisePage = new Page<>(page, pageSize);
         Page<SmallMiddleEnterpriseDto> dtoPage = new Page<>(page, pageSize);
-        commonUtils.customPage(smallMiddleEnterprisePage, new LambdaQueryWrapper<SmallMiddleEnterprise>(), this.entityClass, this.getClass());
+        LambdaQueryWrapper<SmallMiddleEnterprise> smallMiddleEnterpriseLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        smallMiddleEnterpriseLambdaQueryWrapper.orderByDesc(SmallMiddleEnterprise::getUpdatedTime);
+        commonUtils.customPage(smallMiddleEnterprisePage, smallMiddleEnterpriseLambdaQueryWrapper, this.entityClass, this.getClass());
 
         BeanUtils.copyProperties(smallMiddleEnterprisePage, dtoPage, "records");
 
@@ -105,6 +108,11 @@ public class SmallMiddleEnterpriseServiceImpl extends ServiceImpl<SmallMiddleEnt
             SmallMiddleEnterpriseDto dto = new SmallMiddleEnterpriseDto();
             BeanUtils.copyProperties(it, dto);
             dto.setCoreEnterpriseName(companyService.getById(it.getCoreEnterpriseId()).getName());
+            String bankNumber = dto.getBankNumber();
+            if (StringUtils.isNotEmpty(bankNumber)) {
+                String masked = DataMaskingUtils.bankCard(bankNumber);
+                dto.setBankNumber(masked);
+            }
             return dto;
         }).toList();
 

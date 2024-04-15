@@ -140,7 +140,7 @@
                     <el-input v-model="registerForm.companyName"></el-input>
                 </el-form-item>
                 <div class="codeValidate">
-                    <el-form-item label="code" prop="code" class="inputItemCode">
+                    <el-form-item label="code" prop="code" class="inputItemCode" @keyup.enter.native="handleRegister">
                         <el-input v-model="registerForm.code"></el-input>
                     </el-form-item>
                     <el-button class="sendCode" type="primary" @click="sendCode" :disabled="disableSendCode">{{ sendCodeText }}</el-button>
@@ -148,8 +148,8 @@
                 <el-form-item style="width:100%;">
                     <el-button :loading="loading" class="register-btn" size="medium" type="primary" style="width:100%;"
                             @click.native.prevent="handleRegister">
-                        <span v-if="!loading">Register</span>
-                        <span v-else>Loading...</span>
+                        <span v-if="!loading">register</span>
+                        <span v-else>loading...</span>
                     </el-button>
                 </el-form-item>
             </el-form>

@@ -22,7 +22,7 @@ function getOrderDetail(id) {
 
 function deleteOrdersById(id) {
     return $axios({
-        url: `/order/${id}/delete`,
+        url: `/order/${id}/deleteById`,
         method: 'post',
     });
 }

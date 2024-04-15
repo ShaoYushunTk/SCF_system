@@ -34,15 +34,19 @@
                 <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
             </div>
             <el-table :data="tableData" stripe class="tableBox">
-                <el-table-column prop="payerName" label="付款方"></el-table-column>
-                <el-table-column prop="receiverName" label="收款方"></el-table-column>
-                <el-table-column prop="tradingType" label="交易类型" :formatter="formatTradingType"></el-table-column>
-                <el-table-column prop="tradingTime" label="交易时间">
+                <el-table-column prop="payerName" label="付款方" align="center"></el-table-column>
+                <el-table-column prop="receiverName" label="收款方" align="center"></el-table-column>
+                <el-table-column prop="tradingType" label="交易类型" align="center" :formatter="formatTradingType"></el-table-column>
+                <el-table-column prop="tradingTime" label="交易时间" align="center">
                     <template slot-scope="scope">
                         {{scope.row.tradingTime | formatLocalDateTime}}
                     </template>
                 </el-table-column>
-                <el-table-column prop="account" label="交易金额"></el-table-column>
+                <el-table-column prop="account" label="交易金额" align="center">
+                    <template slot-scope="scope">
+                        {{scope.row.account | formatNumber}}
+                    </template>
+                </el-table-column>
             </el-table>
             <el-pagination
                     class="pageList"
@@ -57,6 +61,25 @@
         </div>
     </div>
     <script>
+        Vue.filter('formatNumber', function(value) {
+            // 如果值为 null 或者 undefined，则返回 '-'
+            if (value == null) {
+                return '-';
+            }
+
+            // 如果值已经是字符串类型并且包含两位小数，则直接返回
+            if (typeof value === 'string' && value.includes('.') && value.split('.')[1].length === 2) {
+                return value;
+            }
+
+            // 如果值为数字类型，则转换为小数点后两位的字符串
+            if (typeof value === 'number') {
+                return value.toFixed(2);
+            }
+
+            // 其他情况直接返回原始值
+            return value;
+        });
         Vue.filter('formatLocalDateTime', function(value) {
             if (value == null) {
                 return '-'

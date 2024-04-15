@@ -43,13 +43,13 @@
                 <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
             </div>
             <el-table :data="tableData" stripe class="tableBox">
-                <el-table-column prop="name" label="核心企业名称"></el-table-column>
-                <el-table-column prop="creditRating" label="信用评级">
+                <el-table-column prop="name" label="核心企业名称" align="center"></el-table-column>
+                <el-table-column prop="creditRating" label="信用评级" align="center">
                     <template slot-scope="scope">
                         {{ scope.row.creditRating ? scope.row.creditRating : '-' }}
                     </template>
                 </el-table-column>
-                <el-table-column prop="smallMiddleEnterpriseNameList" label="关联的中小企业" :formatter="formatList"></el-table-column>
+                <el-table-column prop="smallMiddleEnterpriseNameList" label="关联的中小企业" align="center" :formatter="formatList"></el-table-column>
                 <el-table-column label="操作" width="160" align="center">
                     <template slot-scope="scope">
                         <el-button

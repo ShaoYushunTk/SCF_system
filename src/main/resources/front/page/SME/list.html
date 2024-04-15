@@ -42,12 +42,10 @@
                 <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
             </div>
             <el-table :data="tableData" stripe class="tableBox">
-                <el-table-column prop="name" label="中小企业名称"></el-table-column>
-                <el-table-column prop="enterpriseIndustry" label="所属行业"></el-table-column>
-                <el-table-column prop="coreEnterpriseName" label="关联的核心企业"></el-table-column>
-                <el-table-column prop="contactInfo.phone" label="联系电话"></el-table-column>
-                <el-table-column prop="contactInfo.address" label="联系地址"></el-table-column>
-                <el-table-column prop="contactInfo.email" label="联系邮箱"></el-table-column>
+                <el-table-column prop="name" label="中小企业名称" align="center"></el-table-column>
+                <el-table-column prop="enterpriseIndustry" label="所属行业" align="center"></el-table-column>
+                <el-table-column prop="bankNumber" label="银行卡号" align="center"></el-table-column>
+                <el-table-column prop="coreEnterpriseName" label="关联的核心企业" align="center"></el-table-column>
                 <el-table-column label="操作" width="160" align="center">
                     <template slot-scope="scope">
                         <el-button

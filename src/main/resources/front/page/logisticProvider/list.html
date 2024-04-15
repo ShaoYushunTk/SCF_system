@@ -31,14 +31,20 @@
                         @keyup.enter.native="handleQuery"
                 >
                 </el-input>
+                <el-select v-model="inputTransportType" placeholder="请选择运输方式">
+                    <el-option label="请选择运输方式" value=""></el-option>
+                    <el-option label="公路运输" value="ROAD_TRANSPORT"></el-option>
+                    <el-option label="铁路运输" value="RAILWAY_TRANSPORT"></el-option>
+                    <el-option label="海运" value="MARITIME_SHIPPING"></el-option>
+                    <el-option label="空运" value="AIR_FREIGHT"></el-option>
+                    <el-option label="多式联运" value="MULTIMODAL_TRANSPORT"></el-option>
+                </el-select>
                 <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
             </div>
             <el-table :data="tableData" stripe class="tableBox">
-                <el-table-column prop="name" label="物流公司名称"></el-table-column>
-                <el-table-column prop="enterpriseIndustry" label="所属行业"></el-table-column>
-                <el-table-column prop="contactInfo.phone" label="联系电话"></el-table-column>
-                <el-table-column prop="contactInfo.address" label="联系地址"></el-table-column>
-                <el-table-column prop="contactInfo.email" label="联系邮箱"></el-table-column>
+                <el-table-column prop="name" label="物流公司名称" align="center"></el-table-column>
+                <el-table-column prop="enterpriseIndustry" label="所属行业" align="center"></el-table-column>
+                <el-table-column prop="transportType" label="运输方式" align="center" :formatter="formatTransportType"></el-table-column>
                 <el-table-column label="操作" width="160" align="center">
                     <template slot-scope="scope">
                         <el-button
@@ -80,6 +86,7 @@
             data() {
                 return {
                     input: '',
+                    inputTransportType: '',
                     counts: 0,
                     page: 1,
                     pageSize: 10,
@@ -100,6 +107,7 @@
                         page: this.page,
                         pageSize: this.pageSize,
                         name: this.input ? this.input : undefined,
+                        transportType: this.inputTransportType ? this.inputTransportType : undefined
                     }
                     console.log(params)
                     await getLogisticProviderPage(params).then(res => {
@@ -114,6 +122,17 @@
                 handleQuery() {
                     this.page = 1;
                     this.init();
+                },
+                formatTransportType (row, column) {
+                    const transportTypeMap = {
+                        ROAD_TRANSPORT: '公路运输',
+                        RAILWAY_TRANSPORT: '铁路运输',
+                        MARITIME_SHIPPING: '海运',
+                        AIR_FREIGHT: '空运',
+                        MULTIMODAL_TRANSPORT: '多式联运',
+                        // 添加更多类型的映射关系
+                    };
+                    return transportTypeMap[row.transportType] || '';
                 },
                 updateLogisticProvider (st) {
                     window.parent.menuHandle({

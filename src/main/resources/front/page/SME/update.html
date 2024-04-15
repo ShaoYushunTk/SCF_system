@@ -2,9 +2,162 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css">
+    <link rel="stylesheet" href="../../styles/common.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
 </head>
 <body>
-
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../api/company.js"></script>
+    <script src="../../js/index.js"></script>
+    <div class="dashboard-container" id="smeUpdate-app">
+        <div class="container">
+            <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="120px" class="demo-ruleForm">
+                <el-form-item label="企业名称" prop="name" :disabled="true">
+                    <el-input v-model="ruleForm.name" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="企业类型" prop="companyType" :disabled="true">
+                    <el-select v-model="ruleForm.companyType" placeholder="请选择企业类型" disabled>
+                        <el-option label="中小企业" value="SMEs"></el-option>
+                        <el-option label="核心企业" value="CORE_ENTERPRISE"></el-option>
+                        <el-option label="金融机构" value="FINANCIAL_INSTITUTION"></el-option>
+                        <el-option label="物流公司" value="LOGISTICS_COMPANY"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="企业所属行业" prop="enterpriseIndustry">
+                    <el-input v-model="ruleForm.enterpriseIndustry"></el-input>
+                </el-form-item>
+                <el-form-item label="企业银行卡号" prop="bankNumber">
+                    <el-input v-model="ruleForm.bankNumber"></el-input>
+                </el-form-item>
+                <el-form-item label="关联的核心企业" prop="coreEnterpriseId">
+                    <el-select v-model="ruleForm.coreEnterpriseId">
+                        <el-option
+                            v-for="coreEnterprise in coreEnterpriseList"
+                            :key="coreEnterprise.id"
+                            :label="coreEnterprise.name"
+                            :value="coreEnterprise.id">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="goBack()">取消</el-button>
+                    <el-button type="primary" @click="submitForm('ruleForm')">保存</el-button>
+                    <el-button type="primary" @click="resetForm('ruleForm')">重置</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: '#smeUpdate-app',
+            data() {
+                return {
+                    ruleForm : {
+                        'name': '',
+                        'companyType': '',
+                        'enterpriseIndustry': '',
+                        'bankNumber': '',
+                        'coreEnterpriseId': '',
+                    },
+                    id : '',
+                    user : {},
+                    companyId : '',
+                    companyInfo : {},
+                    coreEnterpriseList: [],
+                    rules: {
+                        bankNumber: [
+                            { required: true, message: '请输入企业银行卡号', trigger: 'blur' },
+                        ],
+                        coreEnterpriseId: [
+                            { required: true, message: '请选择关联的核心企业', trigger: 'change' },
+                        ],
+                    },
+                }
+            },
+            computed: {},
+            created() {
+                this.user = JSON.parse(localStorage.getItem('empInfo')).username
+                const id = requestUrlParam('id') 
+                this.companyId = encodeURIComponent(id)
+                this.init()
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const companyInfoRes = await getCompanyDetail(this.companyId)
+                    if (String(companyInfoRes.code) === '1') {
+                        this.companyInfo = companyInfoRes.data
+                        this.ruleForm.name = this.companyInfo.name || '';
+                        this.ruleForm.companyType = this.companyInfo.companyType || '';
+                        this.ruleForm.enterpriseIndustry = this.companyInfo.enterpriseIndustry;
+                        this.ruleForm.bankNumber = this.companyInfo.bankNumber;
+                        this.ruleForm.coreEnterpriseId = this.companyInfo.coreEnterpriseId;
+                    } else {
+                        this.$message.error('请求出错了：' + String(companyInfoRes.msg))
+                    }
+                    // 获取CORE_ENTERPRISE类型的公司列表
+                    const ceRes = await getCompanyList({ companyType: "CORE_ENTERPRISE" });
+                    if (String(ceRes.code) === '1') {
+                        this.coreEnterpriseList = ceRes.data;
+                    } else {
+                        this.$message.error('请求出错了：' + String(ceRes.msg));
+                    }
+                },
+                handleQuery() {
+                    this.init();
+                },
+                // 添加
+                submitForm(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            const params = {
+                                smallMiddleEnterprise: {
+                                    enterpriseIndustry: this.ruleForm.enterpriseIndustry,
+                                    bankNumber: this.ruleForm.bankNumber,
+                                    coreEnterpriseId: this.ruleForm.coreEnterpriseId,
+                                }
+                            }
+                            updateCompanyDetail(this.companyId, params).then(res => {
+                                if (res.code === 1) {
+                                    this.$message.success('企业更新成功！')
+                                    setTimeout(() => {
+                                        this.goBack();
+                                    }, 1000);
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+                        } else {
+                            console.log('error submit!!');
+                        }
+                    });
+                },
+                goBack() {
+                    window.parent.menuHandle({
+                        id: '2',
+                        url: '/front/page/SME/list.html',
+                        name: '中小企业管理'
+                    },false)
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
+                }
+            }
+        })
+    </script>
 </body>
 </html>

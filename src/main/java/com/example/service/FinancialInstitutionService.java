@@ -25,5 +25,5 @@ public interface FinancialInstitutionService extends IService<FinancialInstituti
 
     Boolean removeByCompanyId(String id);
 
-    Result page(int page, int pageSize, String name);
+    Result page(int page, int pageSize, String name, String financialInstitutionType);
 }

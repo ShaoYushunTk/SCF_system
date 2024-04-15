@@ -23,8 +23,9 @@ public class LogisticProviderController {
     public Result page(
             int page,
             int pageSize,
-            String name
+            String name,
+            String transportType
     ) {
-        return logisticsProviderService.page(page, pageSize, name);
+        return logisticsProviderService.page(page, pageSize, name, transportType);
     }
 }

@@ -28,9 +28,9 @@ public class User implements Serializable {
 
     private int isValid;
 
-    private String contractEmail;
+    private String contactEmail;
 
-    private String contractAddress;
+    private String contactAddress;
 
     @TableField(fill = FieldFill.INSERT)
     private String createdBy;

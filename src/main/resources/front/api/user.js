@@ -28,3 +28,11 @@ function updateUserById(id, params) {
         data: params
     });
 }
+
+function createUser(params) {
+    return $axios({
+        url: '/user/save',
+        method: 'post',
+        data: params
+    });
+}

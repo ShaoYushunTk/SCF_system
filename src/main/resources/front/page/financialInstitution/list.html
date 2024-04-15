@@ -30,21 +30,23 @@
                         @keyup.enter.native="handleQuery"
                 >
                 </el-input>
+                <el-select v-model="inputFinancialInstitutionType" placeholder="请选择金融机构类型">
+                    <el-option label="请选择金融机构类型" value=""></el-option>
+                    <el-option label="商业银行" value="COMMERCIAL_BANK"></el-option>
+                    <el-option label="保理公司" value="FACTORING_COMPANIES"></el-option>
+                    <el-option label="金融科技平台" value="FINTECH_PLATFORMS"></el-option>
+                </el-select>
                 <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
             </div>
-            <el-table :data="tableData" stripe class="tableBox">
-                <el-table-column prop="name" label="金融机构名称"></el-table-column>
-                <el-table-column prop="enterpriseIndustry" label="所属行业"></el-table-column>
-                <el-table-column prop="loanInterestRate" label="融资利率（年利率）">
+            <el-table :data="tableData" stripe class="tableBox" align="center">
+                <el-table-column prop="name" label="金融机构名称" width="160" align="center"></el-table-column>
+                <el-table-column prop="enterpriseIndustry" label="所属行业" width="160" align="center"></el-table-column>
+                <el-table-column prop="loanInterestRate" label="信用等级: 融资利率（年利率）" align="center">
                     <template slot-scope="scope">
-                        <span v-for="(value, key) in scope.row.loanInterestRate" :key="key">
-                            {{ key }}: {{ value }}
-                        </span>
+                        <span>{{ joinKeyValuePairs(scope.row.loanInterestRate) }}</span>
                     </template>
                 </el-table-column>
-                <el-table-column prop="contactInfo.phone" label="联系电话"></el-table-column>
-                <el-table-column prop="contactInfo.address" label="联系地址"></el-table-column>
-                <el-table-column prop="contactInfo.email" label="联系邮箱"></el-table-column>
+                <el-table-column prop="financialInstitutionType" label="金融机构类型" align="center" width="160" :formatter="formatFinancialInstitutionType"></el-table-column>
                 <el-table-column label="操作" width="160" align="center">
                     <template slot-scope="scope">
                         <el-button
@@ -86,6 +88,7 @@
             data() {
                 return {
                     input: '',
+                    inputFinancialInstitutionType: '',
                     counts: 0,
                     page: 1,
                     pageSize: 10,
@@ -106,6 +109,7 @@
                         page: this.page,
                         pageSize: this.pageSize,
                         name: this.input ? this.input : undefined,
+                        financialInstitutionType: this.inputFinancialInstitutionType ? this.inputFinancialInstitutionType : undefined,
                     }
                     console.log(params)
                     await getFinancialInstitutionPage(params).then(res => {
@@ -121,10 +125,22 @@
                     this.page = 1;
                     this.init();
                 },
+                joinKeyValuePairs(obj) {
+                    return Object.keys(obj).map(key => `${key}: ${obj[key]}`).join(', ');
+                },
+                formatFinancialInstitutionType(row, column) {
+                    const financialInstitutionTypeMap = {
+                        COMMERCIAL_BANK: '商业银行',
+                        FACTORING_COMPANIES: '保理公司',
+                        FINTECH_PLATFORMS: '金融科技平台',
+                        // 添加更多类型的映射关系
+                    };
+                    return financialInstitutionTypeMap[row.financialInstitutionType] || '';
+                },
                 // 添加
                 updateFinancialInstitution (st) {
                     window.parent.menuHandle({
-                        id: '2',
+                        id: '1',
                         url: '/front/page/financialInstitution/update.html?id='+encodeURIComponent(st),
                         name: '修改企业'
                     },true)

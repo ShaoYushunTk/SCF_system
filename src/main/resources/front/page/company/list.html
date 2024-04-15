@@ -48,22 +48,25 @@
                 </el-button>
             </div>
             <el-table :data="tableData" stripe class="tableBox">
-                <el-table-column prop="name" label="企业名称"></el-table-column>
-                <el-table-column prop="companyType" label="企业类型" :formatter="formatCompanyType"></el-table-column>
-                <el-table-column prop="contactInfo.phone" label="企业联系电话"></el-table-column>
-                <el-table-column prop="contactInfo.address" label="企业联系地址"></el-table-column>
-                <el-table-column prop="contactInfo.email" label="企业联系邮箱"></el-table-column>
+                <el-table-column prop="name" label="企业名称" align="center"></el-table-column>
+                <el-table-column prop="companyType" label="企业类型" align="center" :formatter="formatCompanyType"></el-table-column>
+                <el-table-column prop="contactInfo.phone" label="企业联系电话" align="center">
+                    <template slot-scope="scope">
+                        {{scope.row.contactInfo == null ? '-' : scope.row.contactInfo.phone | '-'}}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="contactInfo.address" label="企业联系地址" align="center">
+                    <template slot-scope="scope">
+                        {{scope.row.contactInfo == null ? '-' : scope.row.contactInfo.address | '-'}}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="contactInfo.email" label="企业联系邮箱" align="center">
+                    <template slot-scope="scope">
+                        {{scope.row.contactInfo == null ? '-' : scope.row.contactInfo.email | '-'}}
+                    </template>
+                </el-table-column>
                 <el-table-column label="操作" width="160" align="center">
                     <template slot-scope="scope">
-                        <el-button
-                                type="text"
-                                size="small"
-                                class="blueBug"
-                                style="color: #333333 !important; background-color: transparent !important; border-color: transparent !important;"
-                                @click="getCompanyDetail(scope.row.id)"
-                        >
-                            详情
-                        </el-button>
                         <el-button
                                 type="text"
                                 size="small"
@@ -145,13 +148,13 @@
                     if (st === 'add'){
                         window.parent.menuHandle({
                             id: '2',
-                            url: '/backend/page/company/add.html',
+                            url: '/front/page/company/add.html',
                             name: '添加企业'
                         },true)
                     } else {
                         window.parent.menuHandle({
                             id: '2',
-                            url: '/backend/page/company/add.html?id='+encodeURIComponent(st),
+                            url: '/front/page/company/add.html?id='+encodeURIComponent(st),
                             name: '修改企业'
                         },true)
                     }
@@ -165,9 +168,9 @@
                         'type': 'warning'
                     }).then(() => {
                         Promise.all([
-                            deleteCompanyById(this.id),
                             deleteOrdersByCompanyId(this.id),
-                            deleteFinancingInfoByCompanyId(this.id)
+                            deleteFinancingInfoByCompanyId(this.id),
+                            deleteCompanyById(this.id),
                         ]).then(results => {
                             if (results.every(res => res.code === 1)) {
                                 this.$message.success('企业删除成功');
@@ -180,13 +183,6 @@
                             console.error('请求发生错误', err);
                         });
                     })
-                },
-                getCompanyDetail(id) {
-                    window.parent.menuHandle({
-                        id: '2',
-                        url: '/backend/page/company/detail.html?id='+encodeURIComponent(id),
-                        name: '企业详情'
-                    },true)
                 },
                 formatCompanyType(row, column) {
                     const companyTypeMap = {

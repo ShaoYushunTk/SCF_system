@@ -30,14 +30,14 @@
                         <i class="el-icon-user"></i>
                         融资企业名称
                     </template>
-                    {{ this.financingInfoData.companyName || '' }}
+                    {{ this.financingInfoData.companyName || '-' }}
                 </el-descriptions-item>
                 <el-descriptions-item prop="financialInstitutionName">
                     <template slot="label">
                         <i class="el-icon-office-building"></i>
                         金融机构名称
                     </template>
-                    {{ this.financingInfoData.financialInstitutionName || '' }}
+                    {{ this.financingInfoData.financialInstitutionName || '-' }}
                 </el-descriptions-item>
                 <el-descriptions-item prop="applyTime">
                     <template slot="label">
@@ -51,21 +51,21 @@
                         <i class="el-icon-money"></i>
                         融资金额
                     </template>
-                    {{ this.financingInfoData.account || '' }}
+                    {{ this.financingInfoData.account | formatNumber }}
                 </el-descriptions-item>
                 <el-descriptions-item prop="financingType">
                     <template slot="label">
                         <i class="el-icon-s-marketing"></i>
                         融资类型
                     </template>
-                    {{ formatFinancingType(this.financingInfoData.financingType) || '' }}
+                    {{ formatFinancingType(this.financingInfoData.financingType) || '-' }}
                 </el-descriptions-item>
                 <el-descriptions-item prop="approvalStatus">
                     <template slot="label">
                         <i class="el-icon-s-finance"></i>
                         审批状态
                     </template>
-                    {{ formatApprovalStatus(this.financingInfoData.approvalStatus) || '' }}
+                    {{ formatApprovalStatus(this.financingInfoData.approvalStatus) || '-' }}
                 </el-descriptions-item>
                 <el-descriptions-item prop="approvalTime">
                     <template slot="label">
@@ -79,7 +79,7 @@
                         <i class="el-icon-s-comment"></i>
                         审批备注
                     </template>
-                    {{ this.financingInfoData.approvalComment || '' }}
+                    {{ this.financingInfoData.approvalComment || '-' }}
                 </el-descriptions-item>
                 <el-descriptions-item prop="loanTime">
                     <template slot="label">
@@ -93,7 +93,7 @@
                         <i class="el-icon-coin"></i>
                         年利率
                     </template>
-                    {{ this.financingInfoData.interestRate || '' }}
+                    {{ this.financingInfoData.interestRate || '-' }}
                 </el-descriptions-item>
                 <el-descriptions-item prop="isRepay">
                     <template slot="label">
@@ -114,12 +114,31 @@
                         <i class="el-icon-money"></i>
                         还款金额
                     </template>
-                    {{ this.financingInfoData.repayAccount || '' }}
+                    {{ this.financingInfoData.repayAccount | formatNumber }}
                 </el-descriptions-item>
             </el-descriptions>
         </div>
     </div>
     <script>
+        Vue.filter('formatNumber', function(value) {
+            // 如果值为 null 或者 undefined，则返回 '-'
+            if (value == null) {
+                return '-';
+            }
+
+            // 如果值已经是字符串类型并且包含两位小数，则直接返回
+            if (typeof value === 'string' && value.includes('.') && value.split('.')[1].length === 2) {
+                return value;
+            }
+
+            // 如果值为数字类型，则转换为小数点后两位的字符串
+            if (typeof value === 'number') {
+                return value.toFixed(2);
+            }
+
+            // 其他情况直接返回原始值
+            return value;
+        });
         Vue.filter('formatLocalDateTime', function(value) {
             if (value == null) {
                 return '-'
@@ -142,9 +161,9 @@
                 const userInfo = window.sessionStorage.getItem('userInfo')
                 if (userInfo) {
                     this.user = JSON.parse(userInfo)
-                    this.financingInfoId = encodeURIComponent(requestUrlParam('id'))
-                    console.log(this.financingInfoId)
                 }
+                this.financingInfoId = encodeURIComponent(requestUrlParam('id'))
+                console.log(this.financingInfoId)
                 this.init()
             },
             mounted() {

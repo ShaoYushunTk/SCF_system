@@ -15,6 +15,7 @@ import com.example.service.CompanyService;
 import com.example.service.CoreEnterpriseService;
 import com.example.service.SmallMiddleEnterpriseService;
 import com.example.utils.CommonUtils;
+import com.example.utils.DataMaskingUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -160,11 +161,18 @@ public class CoreEnterpriseServiceImpl extends ServiceImpl<CoreEnterpriseMapper,
             String creditRating
     ) {
         Page<CoreEnterprise> coreEnterprisePage = new Page<>(page, pageSize);
-        commonUtils.customPage(coreEnterprisePage, new LambdaQueryWrapper<CoreEnterprise>(), this.entityClass, this.getClass());
+        LambdaQueryWrapper<CoreEnterprise> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.orderByDesc(CoreEnterprise::getUpdatedTime);
+        commonUtils.customPage(coreEnterprisePage, lambdaQueryWrapper, this.entityClass, this.getClass());
 
         List<CoreEnterprise> records = coreEnterprisePage.getRecords().stream().peek((it) -> {
             Company company = companyService.getById(it.getId());
             BeanUtils.copyProperties(company, it);
+            String bankNumber = it.getBankNumber();
+            String masked = DataMaskingUtils.bankCard(bankNumber);
+            if (StringUtils.isNotEmpty(masked)) {
+                it.setBankNumber(masked);
+            }
         }).toList();
 
         if (StringUtils.isNotEmpty(name)) {

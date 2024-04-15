@@ -2,9 +2,217 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css">
+    <link rel="stylesheet" href="../../styles/common.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
 </head>
 <body>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../plugins/common/decimal.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../api/company.js"></script>
+    <script src="../../js/index.js"></script>
+    <div class="dashboard-container" id="fiUpdate-app">
+        <div class="container">
+            <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="160px" class="demo-ruleForm">
+                <el-form-item label="企业名称" prop="name" :disabled="true">
+                    <el-input v-model="ruleForm.name" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="企业类型" prop="companyType" :disabled="true">
+                    <el-select v-model="ruleForm.companyType" placeholder="请选择企业类型" disabled>
+                        <el-option label="中小企业" value="SMEs"></el-option>
+                        <el-option label="核心企业" value="CORE_ENTERPRISE"></el-option>
+                        <el-option label="金融机构" value="FINANCIAL_INSTITUTION"></el-option>
+                        <el-option label="物流公司" value="LOGISTICS_COMPANY"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="企业所属行业" prop="enterpriseIndustry">
+                    <el-input v-model="ruleForm.enterpriseIndustry"></el-input>
+                </el-form-item>
+                <el-form-item label="金融机构类型" prop="financialInstitutionType">
+                    <el-select v-model="ruleForm.financialInstitutionType" placeholder="请选择金融机构类型">
+                        <el-option label="商业银行" value="COMMERCIAL_BANK"></el-option>
+                        <el-option label="保理公司" value="FACTORING_COMPANIES"></el-option>
+                        <el-option label="金融科技平台" value="FINTECH_PLATFORMS"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="信用等级: 融资利率" prop="loanInterestRate">
+                    <template>
+                        <div>
+                            <div v-for="(pair, index) in ruleForm.loanInterestRate" :key="index">
+                                <el-tooltip content="常用的信用等级为：AAA, AA, A, BBB, BB, B, CCC, CC, C, D" placement="top">
+                                    <el-input v-model="pair.key" placeholder="信用等级" style="width: 100px;"></el-input>
+                                </el-tooltip>
+                                <el-input v-model="pair.value" placeholder="融资利率" style="width: 100px;"></el-input>
+                                <el-button @click="removePair(index)">删除</el-button>
+                            </div>
+                            <el-button @click="addPair">添加</el-button>
+                        </div>
+                    </template>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="goBack()">取消</el-button>
+                    <el-button type="primary" @click="submitForm('ruleForm')">保存</el-button>
+                    <el-button type="primary" @click="resetForm('ruleForm')">重置</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: '#fiUpdate-app',
+            data() {
+                return {
+                    ruleForm : {
+                        'name': '',
+                        'companyType': '',
+                        'enterpriseIndustry': '',
+                        'bankNumber': '',
+                        'registeredCapital': '',
+                        'financialInstitutionType': '',
+                        'loanInterestRate': [],
+                    },
+                    id : '',
+                    user : {},
+                    companyId : '',
+                    companyInfo : {},
+                    rules: {
+                        financialInstitutionType: [
+                            { required: true, message: '请选择金融机构类型', trigger: 'blur' },
+                        ],
+                        loanInterestRate: [
+                            {
+                                validator: (rule, value, callback) => {
+                                    if (!Array.isArray(value) || value.length === 0) {
+                                        callback(new Error('融资利率不能为空'));
+                                        return;
+                                    }
 
+                                    // 遍历检查每个元素
+                                    for (const item of value) {
+                                        // 检查 key 和 value 是否为空字符串
+                                        if (!item.key || !item.value) {
+                                            callback(new Error('融资利率中的信用等级和利率值不能为空'));
+                                            return;
+                                        }
+
+                                        // 检查 key 是否是预定义的信用等级
+                                        const validCreditLevels = ['AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'CCC', 'CC', 'C', 'D'];
+                                        if (!validCreditLevels.includes(item.key)) {
+                                            callback(new Error('信用等级必须为 常见信用等级 中的一种'));
+                                            return;
+                                        }
+
+                                        // 检查 value 是否是大于0的数字
+                                        const numericValue = parseFloat(item.value);
+                                        if (isNaN(numericValue) || numericValue <= 0) {
+                                            callback(new Error('利率值必须为大于0的数字'));
+                                            return;
+                                        }
+                                    }
+
+                                    // 校验通过
+                                    callback();
+                                },
+                                trigger: 'blur'
+                            }
+                        ]
+                    },
+                }
+            },
+            computed: {},
+            created() {
+                this.user = JSON.parse(localStorage.getItem('empInfo')).username
+                const id = requestUrlParam('id') 
+                this.companyId = encodeURIComponent(id)
+                this.init()
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const companyInfoRes = await getCompanyDetail(this.companyId)
+                    if (String(companyInfoRes.code) === '1') {
+                        this.companyInfo = companyInfoRes.data
+                        this.ruleForm.name = this.companyInfo.name || '';
+                        this.ruleForm.companyType = this.companyInfo.companyType || '';
+                        this.ruleForm.enterpriseIndustry = this.companyInfo.enterpriseIndustry;
+                        this.ruleForm.financialInstitutionType = this.companyInfo.financialInstitutionType;
+                        // 将后端的 loanInterestRate 转换为前端的数组格式
+                        this.ruleForm.loanInterestRate = Object.keys(this.companyInfo.loanInterestRate).map(key => ({
+                            key: key,
+                            value: this.companyInfo.loanInterestRate[key].toString(), // 将 BigDecimal 转换为字符串显示
+                        }));
+                    } else {
+                        this.$message.error('请求出错了：' + String(companyInfoRes.msg))
+                    }
+                },
+                handleQuery() {
+                    this.init();
+                },
+                addPair() {
+                    console.log(this.ruleForm.loanInterestRate)
+                    this.ruleForm.loanInterestRate.push({ key: '', value: '' });
+                },
+                removePair(index) {
+                    this.ruleForm.loanInterestRate.splice(index, 1);
+                },
+                arrayToMap(array) {
+                    const map = {};
+                    array.forEach(item => {
+                        map[item.key] = parseFloat(item.value);
+                    });
+                    return map;
+                },
+                // 添加
+                submitForm(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            const params = {
+                                financialInstitution: {
+                                    enterpriseIndustry: this.ruleForm.enterpriseIndustry,
+                                    financialInstitutionType: this.ruleForm.financialInstitutionType,
+                                    loanInterestRate: this.arrayToMap(this.ruleForm.loanInterestRate),
+                                }
+                            }
+                            updateCompanyDetail(this.companyId, params).then(res => {
+                                if (res.code === 1) {
+                                    this.$message.success('企业更新成功！')
+                                    setTimeout(() => {
+                                        this.goBack();
+                                    }, 1000);
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+                        } else {
+                            console.log('error submit!!');
+                        }
+                    });
+                },
+                goBack() {
+                    window.parent.menuHandle({
+                        id: '1',
+                        url: '/front/page/financialInstitution/list.html',
+                        name: '金融机构管理'
+                    },false)
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
+                }
+            }
+        })
+    </script>
 </body>
 </html>

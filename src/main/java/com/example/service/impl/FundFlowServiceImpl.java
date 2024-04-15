@@ -1,8 +1,10 @@
 package com.example.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.constant.CompanyType;
 import com.example.constant.TradingType;
 import com.example.dto.FundFlowDto;
+import com.example.entity.Company;
 import com.example.exception.CommonException;
 import com.example.service.CompanyService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -73,12 +75,18 @@ public class FundFlowServiceImpl extends ServiceImpl<FundFlowMapper, FundFlow> i
 
     @Override
     public Result deleteByCompanyId(String companyId) throws InterruptedException, TimeoutException {
+        Company byId = companyService.getById(companyId);
+        if (byId.getCompanyType() == CompanyType.LOGISTICS_COMPANY || byId.getCompanyType() == CompanyType.FINANCIAL_INSTITUTION) {
+            return Result.success("");
+        }
         LambdaQueryWrapper<FundFlow> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(StringUtils.isNotEmpty(companyId), FundFlow::getPayer, companyId)
                 .or()
                 .eq(StringUtils.isNotEmpty(companyId), FundFlow::getReceiver, companyId);
         List<FundFlow> fundFlowList = this.list(queryWrapper);
-
+        if (fundFlowList.isEmpty()) {
+            return Result.success("");
+        }
         try {
             for (FundFlow fundFlow : fundFlowList) {
                 contract.submitTransaction("DeleteFund", fundFlow.getId());

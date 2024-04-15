@@ -182,8 +182,8 @@ public class UserController {
         Page<UserDto> userDtoPage = new Page<>(page,pageSize);
 
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.like(StringUtils.isNotEmpty(name), User::getName, name);
-        queryWrapper.orderByDesc(User::getUpdatedTime);
+        queryWrapper.like(StringUtils.isNotEmpty(name), User::getName, name)
+                .orderByDesc(User::getUpdatedTime);
 
         userService.page(pageInfo, queryWrapper);
 
@@ -220,21 +220,25 @@ public class UserController {
     @PostMapping("/save")
     public Result save(
             @RequestBody
-            User user
+            UserRegisterDto user
     ) {
-        // 同名校验
+        // 手机号校验
         LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(User::getName, user.getName());
+        lambdaQueryWrapper.eq(User::getPhone, user.getPhone());
         User one = userService.getOne(lambdaQueryWrapper);
         if (one != null) {
-            throw new CommonException("当前用户名称已存在");
+            throw new CommonException("当前手机号已存在");
         }
         // 企业id校验
-        Company byId = companyService.getById(user.getCompanyId());
+        LambdaQueryWrapper<Company> companyLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        companyLambdaQueryWrapper.eq(Company::getCompanyType, user.getCompanyType());
+        companyLambdaQueryWrapper.eq(Company::getName, user.getCompanyName());
+        Company byId = companyService.getOne(companyLambdaQueryWrapper);
         if (byId == null) {
             throw new CommonException("企业不存在");
         }
         user.setId(UUIDUtils.generate());
+        user.setCompanyId(byId.getId());
         user.setIsValid(1);
         userService.save(user);
         return Result.success("保存成功");
@@ -263,7 +267,8 @@ public class UserController {
                 throw new CommonException("当前企业下已存在相同手机号的用户");
             }
         }
-
+        user.setId(id);
+        user.setIsValid(1);
         userService.updateById(user);
         return Result.success("更新成功");
     }

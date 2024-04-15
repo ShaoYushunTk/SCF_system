@@ -76,10 +76,13 @@ public class LogisticsProviderServiceImpl extends ServiceImpl<LogisticsProviderM
     public Result page(
             int page,
             int pageSize,
-            String name
+            String name,
+            String transportType
     ) {
         Page<LogisticsProvider> logisticsProviderPage = new Page<>(page, pageSize);
-        commonUtils.customPage(logisticsProviderPage, new LambdaQueryWrapper<>(), this.entityClass, this.getClass());
+        LambdaQueryWrapper<LogisticsProvider> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.orderByDesc(LogisticsProvider::getUpdatedTime);
+        commonUtils.customPage(logisticsProviderPage, lambdaQueryWrapper, this.entityClass, this.getClass());
 
         List<LogisticsProvider> records = logisticsProviderPage.getRecords().stream().peek((it) -> {
             Company byId = companyService.getById(it.getId());
@@ -89,6 +92,9 @@ public class LogisticsProviderServiceImpl extends ServiceImpl<LogisticsProviderM
         if (StringUtils.isNotEmpty(name)) {
             String regex = ".*" + Pattern.quote(name) + ".*";
             records = records.stream().filter(dto -> dto.getName().matches(regex)).collect(Collectors.toList());
+        }
+        if (StringUtils.isNotEmpty(transportType)) {
+            records = records.stream().filter(dto -> dto.getTransportType().toString().equals(transportType)).collect(Collectors.toList());
         }
         logisticsProviderPage.setRecords(records);
         logisticsProviderPage.setTotal(records.size());

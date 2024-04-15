@@ -219,6 +219,10 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
     public Result deleteByCompanyId(
             String companyId
     ) throws InterruptedException, TimeoutException {
+        Company byId = companyService.getById(companyId);
+        if (byId.getCompanyType() == CompanyType.LOGISTICS_COMPANY || byId.getCompanyType() == CompanyType.FINANCIAL_INSTITUTION) {
+            return Result.success("");
+        }
         LambdaQueryWrapper<FinancingInfo> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(FinancingInfo::getCompanyId, companyId);
         this.remove(queryWrapper);
@@ -246,7 +250,11 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
             BeanUtils.copyProperties(it, dto);
             dto.setCompanyName(companyService.getById(it.getCompanyId()).getName());
             dto.setFinancialInstitutionName(companyService.getById(it.getFinancialInstitutionId()).getName());
-            dto.setApprovalName(commonUtils.getCurrentUserName());
+            if (it.getApprovalStatus() == ApprovalStatus.PENDING) {
+                dto.setApprovalName("待审批");
+            } else {
+                dto.setApprovalName(commonUtils.getUserNameById(it.getApprovalId()));
+            }
             return dto;
         }).toList();
 
@@ -307,7 +315,11 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
             BeanUtils.copyProperties(it, dto);
             dto.setCompanyName(companyService.getById(it.getCompanyId()).getName());
             dto.setFinancialInstitutionName(companyService.getById(it.getFinancialInstitutionId()).getName());
-            dto.setApprovalName(commonUtils.getCurrentUserName());
+            if (it.getApprovalStatus() == ApprovalStatus.PENDING) {
+                dto.setApprovalName("待审批");
+            } else {
+                dto.setApprovalName(commonUtils.getUserNameById(it.getApprovalId()));
+            }
             return dto;
         }).toList();
 
@@ -332,7 +344,11 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
             BeanUtils.copyProperties(it, dto);
             dto.setCompanyName(companyService.getById(it.getCompanyId()).getName());
             dto.setFinancialInstitutionName(companyService.getById(it.getFinancialInstitutionId()).getName());
-            dto.setApprovalName(commonUtils.getCurrentUserName());
+            if (it.getApprovalStatus() == ApprovalStatus.PENDING) {
+                dto.setApprovalName("待审批");
+            } else {
+                dto.setApprovalName(commonUtils.getUserNameById(it.getApprovalId()));
+            }
             return dto;
         }).toList();
 

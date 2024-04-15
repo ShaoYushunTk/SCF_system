@@ -85,7 +85,7 @@ public class FinancingInfoController {
         return financingInfoService.getFinancingInfoById(id);
     }
 
-    @PostMapping("/{id}/delete")
+    @PostMapping("/{id}/deleteById")
     public Result deleteFinancingInfoById(
             @PathVariable
             String id

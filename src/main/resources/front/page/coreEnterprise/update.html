@@ -2,9 +2,259 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css">
+    <link rel="stylesheet" href="../../styles/common.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
 </head>
 <body>
-
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../api/company.js"></script>
+    <script src="../../js/index.js"></script>
+    <div class="dashboard-container" id="ceUpdate-app">
+        <div class="container">
+            <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="120px" class="demo-ruleForm">
+                <el-form-item label="企业名称" prop="name" :disabled="true">
+                    <el-input v-model="ruleForm.name" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="企业类型" prop="companyType" :disabled="true">
+                    <el-select v-model="ruleForm.companyType" placeholder="请选择企业类型" disabled>
+                        <el-option label="中小企业" value="SMEs"></el-option>
+                        <el-option label="核心企业" value="CORE_ENTERPRISE"></el-option>
+                        <el-option label="金融机构" value="FINANCIAL_INSTITUTION"></el-option>
+                        <el-option label="物流公司" value="LOGISTICS_COMPANY"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="企业所属行业" prop="enterpriseIndustry">
+                    <el-input v-model="ruleForm.enterpriseIndustry"></el-input>
+                </el-form-item>
+                <el-form-item label="企业银行卡号" prop="bankNumber">
+                    <el-input v-model="ruleForm.bankNumber"></el-input>
+                </el-form-item>
+                <el-form-item label="注册资本" prop="registeredCapital">
+                    <el-input v-model="ruleForm.registeredCapital"></el-input>
+                </el-form-item>
+                <el-form-item label="流动资产" prop="liquidAssets">
+                    <el-input v-model="ruleForm.liquidAssets"></el-input>
+                </el-form-item>
+                <el-form-item label="固定资产" prop="fixedAssets">
+                    <el-input v-model="ruleForm.fixedAssets"></el-input>
+                </el-form-item>
+                <el-form-item label="流动负债" prop="liquidLiabilities">
+                    <el-input v-model="ruleForm.liquidLiabilities"></el-input>
+                </el-form-item>
+                <el-form-item label="固定负债" prop="fixedLiabilities">
+                    <el-input v-model="ruleForm.fixedLiabilities"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="goBack()">取消</el-button>
+                    <el-button type="primary" @click="submitForm('ruleForm')">保存</el-button>
+                    <el-button type="primary" @click="resetForm('ruleForm')">重置</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: '#ceUpdate-app',
+            data() {
+                return {
+                    ruleForm : {
+                        'name': '',
+                        'companyType': '',
+                        'enterpriseIndustry': '',
+                        'bankNumber': '',
+                        'registeredCapital': '',
+                        'liquidAssets': '',
+                        'fixedAssets': '',
+                        'liquidLiabilities': '',
+                        'fixedLiabilities': '',
+                    },
+                    id : '',
+                    user : {},
+                    companyId : '',
+                    companyInfo : {},
+                    coreEnterpriseList: [],
+                    rules: {
+                        bankNumber: [
+                            { required: true, message: '请输入企业银行卡号', trigger: 'blur' },
+                        ],
+                        registeredCapital: [
+                            {
+                                required: true,
+                                trigger: 'blur',
+                                validator: (rule, value, callback) => {
+                                    if (!value) {
+                                        callback(new Error('请输入注册资本'));
+                                    } else {
+                                        // 检查输入是否为数字类型和小数位数是否符合要求
+                                        if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+                                            callback(new Error('请输入数字类型的数值，最多两位小数'));
+                                        } else {
+                                            callback();
+                                        }
+                                    }
+                                },
+                            },
+                        ],
+                        liquidAssets: [
+                            {
+                                required: true,
+                                trigger: 'blur',
+                                validator: (rule, value, callback) => {
+                                    if (!value) {
+                                        callback(new Error('请输入流动资产'));
+                                    } else {
+                                        // 检查输入是否为数字类型和小数位数是否符合要求
+                                        if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+                                            callback(new Error('请输入数字类型的数值，最多两位小数'));
+                                        } else {
+                                            callback();
+                                        }
+                                    }
+                                },
+                            },
+                        ],
+                        fixedAssets: [
+                            {
+                                required: true,
+                                trigger: 'blur',
+                                validator: (rule, value, callback) => {
+                                    if (!value) {
+                                        callback(new Error('请输入固定资产'));
+                                    } else {
+                                        // 检查输入是否为数字类型和小数位数是否符合要求
+                                        if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+                                            callback(new Error('请输入数字类型的数值，最多两位小数'));
+                                        } else {
+                                            callback();
+                                        }
+                                    }
+                                },
+                            },
+                        ],
+                        liquidLiabilities: [
+                            {
+                                required: true,
+                                trigger: 'blur',
+                                validator: (rule, value, callback) => {
+                                    if (!value) {
+                                        callback(new Error('请输入流动负债'));
+                                    } else {
+                                        // 检查输入是否为数字类型和小数位数是否符合要求
+                                        if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+                                            callback(new Error('请输入数字类型的数值，最多两位小数'));
+                                        } else {
+                                            callback();
+                                        }
+                                    }
+                                },
+                            },
+                        ],
+                        fixedLiabilities: [
+                            {
+                                required: true,
+                                trigger: 'blur',
+                                validator: (rule, value, callback) => {
+                                    if (!value) {
+                                        callback(new Error('请输入固定负债'));
+                                    } else {
+                                        // 检查输入是否为数字类型和小数位数是否符合要求
+                                        if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+                                            callback(new Error('请输入数字类型的数值，最多两位小数'));
+                                            } else {
+                                            callback();
+                                        }
+                                    }
+                                },
+                            },
+                        ],
+                    },
+                }
+            },
+            computed: {},
+            created() {
+                this.user = JSON.parse(localStorage.getItem('empInfo')).username
+                const id = requestUrlParam('id') 
+                this.companyId = encodeURIComponent(id)
+                this.init()
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const companyInfoRes = await getCompanyDetail(this.companyId)
+                    if (String(companyInfoRes.code) === '1') {
+                        this.companyInfo = companyInfoRes.data
+                        this.ruleForm.name = this.companyInfo.name || '';
+                        this.ruleForm.companyType = this.companyInfo.companyType || '';
+                        this.ruleForm.enterpriseIndustry = this.companyInfo.enterpriseIndustry;
+                        this.ruleForm.bankNumber = this.companyInfo.bankNumber;
+                        this.ruleForm.registeredCapital = this.companyInfo.registeredCapital;
+                        this.ruleForm.liquidAssets = this.companyInfo.liquidAssets;
+                        this.ruleForm.fixedAssets = this.companyInfo.fixedAssets;
+                        this.ruleForm.liquidLiabilities = this.companyInfo.liquidLiabilities;
+                        this.ruleForm.fixedLiabilities = this.companyInfo.fixedLiabilities;
+                    } else {
+                        this.$message.error('请求出错了：' + String(companyInfoRes.msg))
+                    }
+                },
+                handleQuery() {
+                    this.init();
+                },
+                // 添加
+                submitForm(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            const params = {
+                                coreEnterprise: {
+                                    enterpriseIndustry: this.ruleForm.enterpriseIndustry,
+                                    bankNumber: this.ruleForm.bankNumber,
+                                    registeredCapital: this.ruleForm.registeredCapital,
+                                    liquidAssets: this.ruleForm.liquidAssets,
+                                    fixedAssets: this.ruleForm.fixedAssets,
+                                    liquidLiabilities: this.ruleForm.liquidLiabilities,
+                                    fixedLiabilities: this.ruleForm.fixedLiabilities,
+                                }
+                            }
+                            updateCompanyDetail(this.companyId, params).then(res => {
+                                if (res.code === 1) {
+                                    this.$message.success('企业更新成功！')
+                                    setTimeout(() => {
+                                        this.goBack();
+                                    }, 1000);
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+                        } else {
+                            console.log('error submit!!');
+                        }
+                    });
+                },
+                goBack() {
+                    window.parent.menuHandle({
+                        id: '2',
+                        url: '/front/page/coreEnterprise/list.html',
+                        name: '核心企业管理'
+                    },false)
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
+                }
+            }
+        })
+    </script>
 </body>
 </html>

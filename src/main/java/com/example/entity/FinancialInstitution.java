@@ -3,6 +3,7 @@ package com.example.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.example.constant.FinancialInstitutionType;
 import lombok.Data;
 import org.apache.ibatis.type.JdbcType;
 
@@ -19,4 +20,5 @@ public class FinancialInstitution extends Company {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private Map<String, Double> loanInterestRate;
     private String enterpriseIndustry;
+    private FinancialInstitutionType financialInstitutionType;
 }

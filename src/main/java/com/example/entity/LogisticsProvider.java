@@ -1,5 +1,6 @@
 package com.example.entity;
 
+import com.example.constant.TransportType;
 import lombok.Data;
 
 /**
@@ -9,4 +10,5 @@ import lombok.Data;
 @Data
 public class LogisticsProvider extends Company{
     private String enterpriseIndustry;
+    private TransportType transportType;
 }

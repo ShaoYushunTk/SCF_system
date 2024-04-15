@@ -15,5 +15,5 @@ public interface LogisticsProviderService extends IService<LogisticsProvider> {
 
     Boolean removeByCompanyId(String id);
 
-    Result page(int page, int pageSize, String name);
+    Result page(int page, int pageSize, String name, String transportType);
 }

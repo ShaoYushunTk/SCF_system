@@ -41,22 +41,13 @@
                 <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
             </div>
             <el-table :data="tableData" stripe class="tableBox">
-                <el-table-column prop="name" label="核心企业名称"></el-table-column>
-                <el-table-column prop="creditRating" label="信用评级"></el-table-column>
-                <el-table-column prop="smallMiddleEnterpriseNameList" label="关联的中小企业" :formatter="formatList"></el-table-column>
-                <el-table-column label="操作" width="160" align="center">
+                <el-table-column prop="name" label="核心企业名称" align="center"></el-table-column>
+                <el-table-column prop="creditRating" label="信用评级" align="center">
                     <template slot-scope="scope">
-                        <el-button
-                                type="text"
-                                size="small"
-                                class="blueBug"
-                                style="color: #3a8ee6 !important; background-color: transparent !important; border-color: transparent !important;"
-                                @click="getCoreEnterpriseCreditRatingDetailHandle(scope.row.id)"
-                        >
-                            详情
-                        </el-button>
+                        {{scope.row.creditRating || '-'}}
                     </template>
                 </el-table-column>
+                <el-table-column prop="smallMiddleEnterpriseNameList" label="关联的中小企业" align="center" :formatter="formatList"></el-table-column>
             </el-table>
             <el-pagination
                     class="pageList"
@@ -115,14 +106,6 @@
                     this.page = 1;
                     this.init();
                 },
-                // 获取详情
-                getCoreEnterpriseCreditRatingDetailHandle (st) {
-                    window.parent.menuHandle({
-                        id: '2',
-                        url: '/front/page/coreEnterprise/dtoDetail.html?companyId='+encodeURIComponent(st),
-                        name: '企业详情'
-                    },true)
-                },
                 formatList(row, column) {
                     // 获取当前列的属性值
                     const value = row[column.property];
@@ -131,7 +114,7 @@
                     if (Array.isArray(value)) {
                         // 判断数组是否为空
                         if (value.length === 0) {
-                            return '无';
+                            return '-';
                         }
                         // 将数组元素连接成字符串并返回
                         return value.join(', '); // 使用逗号分隔

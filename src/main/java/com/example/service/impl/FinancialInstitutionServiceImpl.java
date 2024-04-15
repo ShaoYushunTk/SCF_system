@@ -98,10 +98,13 @@ public class FinancialInstitutionServiceImpl extends ServiceImpl<FinancialInstit
     public Result page(
             int page,
             int pageSize,
-            String name
+            String name,
+            String financialInstitutionType
     ) {
         Page<FinancialInstitution> financialInstitutionPage = new Page<>(page, pageSize);
-        commonUtils.customPage(financialInstitutionPage, new LambdaQueryWrapper<FinancialInstitution>(), this.entityClass, this.getClass());
+        LambdaQueryWrapper<FinancialInstitution> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.orderByDesc(FinancialInstitution::getUpdatedTime);
+        commonUtils.customPage(financialInstitutionPage, lambdaQueryWrapper, this.entityClass, this.getClass());
 
         List<FinancialInstitution> records = financialInstitutionPage.getRecords().stream().peek((it) -> {
             Company company = companyService.getById(it.getId());
@@ -111,6 +114,9 @@ public class FinancialInstitutionServiceImpl extends ServiceImpl<FinancialInstit
         if (StringUtils.isNotEmpty(name)) {
             String regex = ".*" + Pattern.quote(name) + ".*";
             records = records.stream().filter(dto -> dto.getName().matches(regex)).collect(Collectors.toList());
+        }
+        if (StringUtils.isNotEmpty(financialInstitutionType)) {
+            records = records.stream().filter(dto -> dto.getFinancialInstitutionType().toString().equals(financialInstitutionType)).collect(Collectors.toList());
         }
         financialInstitutionPage.setRecords(records);
         financialInstitutionPage.setTotal(records.size());

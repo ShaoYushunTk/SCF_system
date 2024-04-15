@@ -155,7 +155,9 @@
                             createFinancingInfo(params).then(res => {
                                 if (res.code === 1) {
                                     this.$message.success('融资申请提交成功！')
-                                    this.goBack()
+                                    setTimeout(() => {
+                                        this.goBack();
+                                    }, 1000);
                                 } else {
                                     this.$message.error(res.msg || '操作失败')
                                 }

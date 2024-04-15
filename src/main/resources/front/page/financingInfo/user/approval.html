@@ -152,7 +152,9 @@
                             approvalFinancingInfo(this.financingInfoId, params).then(res => {
                                 if (res.code === 1) {
                                     this.$message.success('融资信息审批成功！')
-                                    this.goBack()
+                                    setTimeout(() => {
+                                        this.goBack();
+                                    }, 1000);
                                 } else {
                                     this.$message.error(res.msg || '操作失败')
                                 }

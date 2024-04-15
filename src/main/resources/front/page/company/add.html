@@ -2,9 +2,200 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css">
+    <link rel="stylesheet" href="../../styles/common.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
 </head>
 <body>
-
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../api/company.js"></script>
+    <script src="../../js/index.js"></script>
+    <div class="dashboard-container" id="companyAddOrUpdate-app">
+        <div class="container">
+            <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="120px" class="demo-ruleForm">
+                <el-form-item label="企业名称" prop="name">
+                    <el-input v-model="ruleForm.name"></el-input>
+                </el-form-item>
+                <el-form-item label="企业类型" prop="companyType">
+                    <el-select v-model="ruleForm.companyType" placeholder="请选择企业类型">
+                        <el-option label="中小企业" value="SMEs"></el-option>
+                        <el-option label="核心企业" value="CORE_ENTERPRISE"></el-option>
+                        <el-option label="金融机构" value="FINANCIAL_INSTITUTION"></el-option>
+                        <el-option label="物流公司" value="LOGISTICS_COMPANY"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="企业联系电话" prop="phone">
+                    <el-input v-model="ruleForm.phone"></el-input>
+                </el-form-item>
+                <el-form-item label="企业联系地址" prop="address">
+                    <el-input v-model="ruleForm.address"></el-input>
+                </el-form-item>
+                <el-form-item label="企业联系邮箱" prop="email">
+                    <el-input v-model="ruleForm.email"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="goBack()">取消</el-button>
+                    <el-button type="primary" @click="submitForm('ruleForm')">保存</el-button>
+                    <el-button type="primary" @click="resetForm('ruleForm')">重置</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: '#companyAddOrUpdate-app',
+            data() {
+                return {
+                    ruleForm : {
+                        'name': '',
+                        'companyType': '',
+                        'phone': '',
+                        'address': '',
+                        'email': '',
+                    },
+                    id : '',
+                    user : {},
+                    companyId : '',
+                    companyInfo : {},
+                    rules: {
+                        name: [
+                            {required: true, message: '请输入企业名称', trigger: 'blur'},
+                        ],
+                        companyType: [
+                            {required: true, message: '请选择企业类型', trigger: 'blur'},
+                        ],
+                        phone: [
+                            {required: true, message: '请输入企业联系电话', trigger: 'blur'},
+                            {
+                                validator: (rule, value, callback) => {
+                                    const phoneRegex = /^[1][3-9]\d{9}$/; // 手机号正则表达式
+                                    if (!value || phoneRegex.test(value)) {
+                                        callback(); // 格式正确，通过校验
+                                    } else {
+                                        callback(new Error('请输入有效的手机号码')); // 格式错误，返回错误信息
+                                    }
+                                },
+                                trigger: 'blur',
+                            },
+                        ],
+                        address: [
+                            {required: true, message: '请输入企业联系地址', trigger: 'blur'},
+                        ],
+                        email: [
+                            {required: true, message: '请输入企业联系邮箱', trigger: 'blur'},
+                            {
+                                validator: (rule, value, callback) => {
+                                    const emailRegex = /^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/; // 电子邮件地址正则表达式
+                                    if (!value || emailRegex.test(value)) {
+                                        callback(); // 格式正确，通过校验
+                                    } else {
+                                        callback(new Error('请输入有效的电子邮件地址')); // 格式错误，返回错误信息
+                                    }
+                                },
+                                trigger: 'blur',
+                            },
+                        ],
+                    },
+                }
+            },
+            computed: {},
+            created() {
+                this.user = JSON.parse(localStorage.getItem('empInfo')).username
+                const id = requestUrlParam('id') 
+                if(id) {
+                    this.companyId = encodeURIComponent(id)
+                }
+                this.init()
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    if(this.companyId) {
+                        await getCompanyDetail(this.companyId).then(res => {
+                            if (String(res.code) === '1') {
+                                this.companyInfo = res.data
+                                this.ruleForm.name = this.companyInfo.name || '';
+                                this.ruleForm.companyType = this.companyInfo.companyType || '';
+                                this.ruleForm.phone = this.companyInfo.contactInfo && this.companyInfo.contactInfo.phone || '';
+                                this.ruleForm.address = this.companyInfo.contactInfo && this.companyInfo.contactInfo.address || '';
+                                this.ruleForm.email = this.companyInfo.contactInfo && this.companyInfo.contactInfo.email || '';
+                            }
+                        }).catch(err => {
+                            this.$message.error('请求出错了：' + err)
+                        })
+                    }
+                },
+                handleQuery() {
+                    this.init();
+                },
+                // 添加
+                submitForm(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            const params = {
+                                name: this.ruleForm.name,
+                                companyType: this.ruleForm.companyType,
+                                contactInfo: {
+                                    phone: this.ruleForm.phone,
+                                    address: this.ruleForm.address,
+                                    email: this.ruleForm.email
+                                }
+                            }
+                            if (this.companyId) {
+                                updateCompanyBasic(this.companyId, params).then(res => {
+                                    if (res.code === 1) {
+                                        this.$message.success('企业更新成功！')
+                                        setTimeout(() => {
+                                            this.goBack();
+                                        }, 1000);
+                                    } else {
+                                        this.$message.error(res.msg || '操作失败')
+                                    }
+                                }).catch(err => {
+                                    this.$message.error('请求出错了：' + err)
+                                })
+                            } else {
+                                createCompany(params).then(res => {
+                                    if (res.code === 1) {
+                                        this.$message.success('企业新建成功！')
+                                        setTimeout(() => {
+                                            this.goBack();
+                                        }, 1000);
+                                    } else {
+                                        this.$message.error(res.msg || '操作失败')
+                                    }
+                                }).catch(err => {
+                                    this.$message.error('请求出错了：' + err)
+                                })
+                            }
+                        } else {
+                            console.log('error submit!!');
+                        }
+                    });
+                },
+                goBack() {
+                    window.parent.menuHandle({
+                        id: '2',
+                        url: '/front/page/company/list.html',
+                        name: '企业管理'
+                    },false)
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
+                },
+            }
+        })
+    </script>
 </body>
 </html>

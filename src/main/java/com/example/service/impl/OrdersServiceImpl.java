@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.common.BaseContext;
 import com.example.common.Result;
+import com.example.constant.CompanyType;
 import com.example.constant.OrderStatus;
 import com.example.constant.TradingType;
 import com.example.dto.OrderDto;
@@ -205,6 +206,10 @@ public class OrdersServiceImpl extends ServiceImpl<OrderMapper, Orders> implemen
 
     @Override
     public Result deleteByCompanyId(String companyId) {
+        Company byId = companyService.getById(companyId);
+        if (byId.getCompanyType() == CompanyType.LOGISTICS_COMPANY || byId.getCompanyType() == CompanyType.FINANCIAL_INSTITUTION) {
+            return Result.success("");
+        }
         LambdaQueryWrapper<Orders> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(Orders::getPayer, companyId)
                 .or()

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Title</title>
+    <title>user login</title>
     <!-- 引入 Element UI 的样式文件 -->
     <link rel="stylesheet" href="../../plugins/element-ui/index.css">
     <link rel="icon" type="image/png" sizes="16x16"  href="../../favicons/favicon-16x16.png">
@@ -139,7 +139,7 @@
                     <el-input v-model="loginForm.phone"></el-input>
                 </el-form-item>
                 <div class="codeValidate">
-                    <el-form-item label="code" prop="code" class="inputItemCode">
+                    <el-form-item label="code" prop="code" class="inputItemCode" @keyup.enter.native="handleLogin">
                         <el-input v-model="loginForm.code"></el-input>
                     </el-form-item>
                     <el-button class="sendCode" type="primary" @click="sendCode" :disabled="disableSendCode">{{ sendCodeText }}</el-button>

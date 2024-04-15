@@ -34,28 +34,36 @@
                 <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
             </div>
             <el-table :data="tableData" stripe class="tableBox">
-                <el-table-column prop="companyName" label="融资企业名称"></el-table-column>
-                <el-table-column prop="financialInstitutionName" label="金融机构名称"></el-table-column>
-                <el-table-column prop="applyTime" label="申请时间" width="150">
+                <el-table-column prop="companyName" label="融资企业名称" width="120" align="center"></el-table-column>
+                <el-table-column prop="financialInstitutionName" label="金融机构名称" align="center" width="120"></el-table-column>
+                <el-table-column prop="applyTime" label="申请时间" width="150" align="center">
                     <template slot-scope="scope">
                         {{scope.row.applyTime | formatLocalDateTime}}
                     </template>
                 </el-table-column>
-                <el-table-column prop="account" label="融资金额"></el-table-column>
-                <el-table-column prop="financingType" label="融资类型" :formatter="formatFinancingType"></el-table-column>
-                <el-table-column prop="approvalStatus" label="审批状态" :formatter="formatApprovalStatus"></el-table-column>
-                <el-table-column prop="approvalTime" label="审批时间" width="150">
+                <el-table-column prop="account" label="融资金额" align="center">
+                    <template slot-scope="scope">
+                        {{scope.row.account | formatNumber}}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="financingType" label="融资类型" align="center" width="120" :formatter="formatFinancingType"></el-table-column>
+                <el-table-column prop="approvalStatus" label="审批状态" align="center" :formatter="formatApprovalStatus"></el-table-column>
+                <el-table-column prop="approvalTime" label="审批时间" align="center" width="150">
                     <template slot-scope="scope">
                         {{scope.row.approvalTime | formatLocalDateTime}}
                     </template>
                 </el-table-column>
-                <el-table-column prop="loanTime" label="放款时间" width="150">
+                <el-table-column prop="loanTime" label="放款时间" align="center" width="150">
                     <template slot-scope="scope">
                         {{scope.row.loanTime | formatLocalDateTime}}
                     </template>
                 </el-table-column>
-                <el-table-column prop="interestRate" label="年利率"></el-table-column>
-                <el-table-column label="操作" width="160" align="center">
+                <el-table-column prop="interestRate" label="年利率" align="center">
+                    <template slot-scope="scope">
+                        {{scope.row.interestRate || '-'}}
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作" width="80" align="center">
                     <template slot-scope="scope">
                         <el-button
                                 type="text"
@@ -82,6 +90,25 @@
         </div>
     </div>
     <script>
+        Vue.filter('formatNumber', function(value) {
+            // 如果值为 null 或者 undefined，则返回 '-'
+            if (value == null) {
+                return '-';
+            }
+
+            // 如果值已经是字符串类型并且包含两位小数，则直接返回
+            if (typeof value === 'string' && value.includes('.') && value.split('.')[1].length === 2) {
+                return value;
+            }
+
+            // 如果值为数字类型，则转换为小数点后两位的字符串
+            if (typeof value === 'number') {
+                return value.toFixed(2);
+            }
+
+            // 其他情况直接返回原始值
+            return value;
+        });
         Vue.filter('formatLocalDateTime', function(value) {
             if (value == null) {
                 return '-'
@@ -135,7 +162,7 @@
                 // 添加
                 getFinancingInfoDetail (st) {
                     window.parent.menuHandle({
-                        id: '2',
+                        id: '3',
                         url: '/front/page/financingInfo/detail.html?id='+encodeURIComponent(st),
                         name: '融资信息详情'
                     },true)

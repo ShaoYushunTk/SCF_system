@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Title</title>
+    <title>admin login</title>
     <!-- 引入 Element UI 的样式文件 -->
     <link rel="stylesheet" href="../../plugins/element-ui/index.css">
     <link rel="icon" type="image/png" sizes="16x16"  href="../../favicons/favicon-16x16.png">
@@ -99,8 +99,8 @@
             <div class="right">
                 <h1>Login</h1>
                 <el-form ref="loginForm" :model="loginForm" :rules="loginRules" label-width="80px">
-                    <el-form-item prop="companyType" label="login type">
-                        <el-select v-model="loginForm.companyType">
+                    <el-form-item prop="companyType" label="login type" class="inputItem">
+                        <el-select v-model="loginForm.companyType" style="display: inline;">
                             <el-option label="Select login type" value=""></el-option>
                             <el-option label="系统管理员" value="SYSTEM_ADMIN"></el-option>
                             <el-option label="中小企业（融资方）" value="SMEs"></el-option>
@@ -112,14 +112,14 @@
                     <el-form-item prop="username" class="inputItem" label="account">
                         <el-input type="test" v-model="loginForm.username"></el-input>
                     </el-form-item>
-                    <el-form-item prop="password" class="inputItem" label="password">
+                    <el-form-item prop="password" class="inputItem" label="password" @keyup.enter.native="handleLogin">
                         <el-input type="password" v-model="loginForm.password"></el-input>
                     </el-form-item>
                     <el-form-item style="width:100%;">
                         <el-button :loading="loading" class="login-btn" size="medium" type="primary" style="width:100%;"
                                 @click.native.prevent="handleLogin">
                             <span v-if="!loading">login</span>
-                            <span v-else>Loading...</span>
+                            <span v-else>loading...</span>
                         </el-button>
                     </el-form-item>
                 </el-form>

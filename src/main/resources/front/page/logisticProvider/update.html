@@ -2,9 +2,145 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css">
+    <link rel="stylesheet" href="../../styles/common.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
 </head>
 <body>
-
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../api/company.js"></script>
+    <script src="../../js/index.js"></script>
+    <div class="dashboard-container" id="lpUpdate-app">
+        <div class="container">
+            <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="120px" class="demo-ruleForm">
+                <el-form-item label="企业名称" prop="name" :disabled="true">
+                    <el-input v-model="ruleForm.name" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="企业类型" prop="companyType" :disabled="true">
+                    <el-select v-model="ruleForm.companyType" placeholder="请选择企业类型" disabled>
+                        <el-option label="中小企业" value="SMEs"></el-option>
+                        <el-option label="核心企业" value="CORE_ENTERPRISE"></el-option>
+                        <el-option label="金融机构" value="FINANCIAL_INSTITUTION"></el-option>
+                        <el-option label="物流公司" value="LOGISTICS_COMPANY"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="企业所属行业" prop="enterpriseIndustry">
+                    <el-input v-model="ruleForm.enterpriseIndustry"></el-input>
+                </el-form-item>
+                <el-form-item label="运输方式" prop="transportType">
+                    <el-select v-model="ruleForm.transportType" placeholder="请选择运输方式">
+                        <el-option label="公路运输" value="ROAD_TRANSPORT"></el-option>
+                        <el-option label="铁路运输" value="RAILWAY_TRANSPORT"></el-option>
+                        <el-option label="海运" value="MARITIME_SHIPPING"></el-option>
+                        <el-option label="空运" value="AIR_FREIGHT"></el-option>
+                        <el-option label="多式联运" value="MULTIMODAL_TRANSPORT"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="goBack()">取消</el-button>
+                    <el-button type="primary" @click="submitForm('ruleForm')">保存</el-button>
+                    <el-button type="primary" @click="resetForm('ruleForm')">重置</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: '#lpUpdate-app',
+            data() {
+                return {
+                    ruleForm : {
+                        'name': '',
+                        'companyType': '',
+                        'enterpriseIndustry': '',
+                        'transportType': ''
+                    },
+                    id : '',
+                    user : {},
+                    companyId : '',
+                    companyInfo : {},
+                    coreEnterpriseList: [],
+                    rules: {
+                        transportType: [
+                            { required: true, message: '请选择运输方式', trigger: 'blur' },
+                        ],
+                    },
+                }
+            },
+            computed: {},
+            created() {
+                this.user = JSON.parse(localStorage.getItem('empInfo')).username
+                const id = requestUrlParam('id')
+                this.companyId = encodeURIComponent(id)
+                this.init()
+            },
+            mounted() {
+            },
+            methods: {
+                async init () {
+                    const companyInfoRes = await getCompanyDetail(this.companyId)
+                    if (String(companyInfoRes.code) === '1') {
+                        this.companyInfo = companyInfoRes.data
+                        this.ruleForm.name = this.companyInfo.name || '';
+                        this.ruleForm.companyType = this.companyInfo.companyType || '';
+                        this.ruleForm.enterpriseIndustry = this.companyInfo.enterpriseIndustry;
+                        this.ruleForm.transportType = this.companyInfo.transportType;
+                    } else {
+                        this.$message.error('请求出错了：' + String(companyInfoRes.msg))
+                    }
+                },
+                handleQuery() {
+                    this.init();
+                },
+                // 添加
+                submitForm(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            const params = {
+                                logisticsProvider: {
+                                    enterpriseIndustry: this.ruleForm.enterpriseIndustry,
+                                    transportType: this.ruleForm.transportType,
+                                }
+                            }
+                            updateCompanyDetail(this.companyId, params).then(res => {
+                                if (res.code === 1) {
+                                    this.$message.success('企业更新成功！')
+                                    setTimeout(() => {
+                                        this.goBack();
+                                    }, 1000);
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+                        } else {
+                            console.log('error submit!!');
+                        }
+                    });
+                },
+                goBack() {
+                    window.parent.menuHandle({
+                        id: '1',
+                        url: '/front/page/logisticProvider/list.html',
+                        name: '物流公司管理'
+                    },false)
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
+                }
+            }
+        })
+    </script>
 </body>
 </html>

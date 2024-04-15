@@ -36,10 +36,10 @@
                 <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
             </div>
             <el-table :data="tableData" stripe class="tableBox">
-                <el-table-column prop="coreEnterpriseName" label="核心企业"></el-table-column>
-                <el-table-column prop="smesNameList" label="关联的中小企业" :formatter="formatList"></el-table-column>
-                <el-table-column prop="financialInstitutionNameList" label="关联的金融机构" :formatter="formatList"></el-table-column>
-                <el-table-column prop="logisticsCompanyNameList" label="关联的物流公司" :formatter="formatList"></el-table-column>
+                <el-table-column prop="coreEnterpriseName" label="核心企业" align="center"></el-table-column>
+                <el-table-column prop="smesNameList" label="关联的中小企业" align="center" :formatter="formatList"></el-table-column>
+                <el-table-column prop="financialInstitutionNameList" align="center" label="关联的金融机构" :formatter="formatList"></el-table-column>
+                <el-table-column prop="logisticsCompanyNameList" align="center" label="关联的物流公司" :formatter="formatList"></el-table-column>
             </el-table>
             <el-pagination
                     class="pageList"
@@ -98,12 +98,16 @@
                     // 获取当前列的属性值
                     const value = row[column.property];
 
-                    // 如果值为数组，则将数组元素连接成字符串并返回
-                    if (Array.isArray(value)) {
+                    // 如果值为数组且不为空，则将数组元素连接成字符串并返回
+                    if (Array.isArray(value) && value.length > 0) {
                         return value.join(', '); // 使用逗号分隔
                     }
 
-                    return value;
+                    // 如果值为空或不为数组，则返回空字符串或原始值
+                    if (value.length === 0) {
+                        return '-';
+                    }
+                    return value || '-';
                 },
                 handleSizeChange (val) {
                     this.pageSize = val

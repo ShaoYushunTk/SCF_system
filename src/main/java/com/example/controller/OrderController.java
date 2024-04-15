@@ -117,7 +117,7 @@ public class OrderController {
         return ordersService.deleteByCompanyId(companyId);
     }
 
-    @PostMapping("/{id}/delete")
+    @PostMapping("/{id}/deleteById")
     public Result deleteById(
             @PathVariable
             String id

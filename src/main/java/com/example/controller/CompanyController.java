@@ -14,6 +14,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -180,6 +181,7 @@ public class CompanyController {
     }
 
     @PostMapping("/{id}/delete")
+    @Transactional
     public Result delete(
             @PathVariable
             String id
@@ -201,6 +203,7 @@ public class CompanyController {
         switch (companyType) {
             case SMEs -> {
                 smallMiddleEnterpriseService.removeByCompanyId(id);
+                companyAssetService.removeByCompanyId(id);
             }
             case FINANCIAL_INSTITUTION -> {
                 financialInstitutionService.removeByCompanyId(id);
@@ -210,12 +213,11 @@ public class CompanyController {
             }
             case CORE_ENTERPRISE -> {
                 coreEnterpriseService.removeByCompanyId(id);
+                companyAssetService.removeByCompanyId(id);
             }
             default -> throw new CommonException("不支持的企业类型");
         };
 
-        // 删除资产表
-        companyAssetService.removeByCompanyId(id);
         companyService.removeById(id);
         return Result.success("删除成功");
     }
@@ -231,8 +233,9 @@ public class CompanyController {
         Page<Company> pageInfo = new Page<>(page, pageSize);
 
         LambdaQueryWrapper<Company> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.like(StringUtils.isNotEmpty(name), Company::getName, name);
-        lambdaQueryWrapper.eq(StringUtils.isNotEmpty(companyType), Company::getCompanyType, companyType);
+        lambdaQueryWrapper.like(StringUtils.isNotEmpty(name), Company::getName, name)
+                .eq(StringUtils.isNotEmpty(companyType), Company::getCompanyType, companyType)
+                .orderByDesc(Company::getUpdatedTime);
 
         companyService.page(pageInfo, lambdaQueryWrapper);
         return Result.success(pageInfo);

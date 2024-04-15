@@ -29,6 +29,11 @@ public class CommonUtils {
         return user.getName();
     }
 
+    public String getUserNameById(String id) {
+        User user = userService.getById(id);
+        return user.getName();
+    }
+
     public <T> void customPage(Page<T> page, LambdaQueryWrapper<T> queryWrapper, Class<T> entityClass, Class<?> entityServiceClass) {
         // 在外部对 queryWrapper 进行定制化处理
         queryWrapper.select(entityClass, info ->
