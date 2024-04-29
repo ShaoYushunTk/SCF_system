@@ -46,12 +46,12 @@
                     </template>
                     {{ this.financingInfoData.applyTime | formatLocalDateTime }}
                 </el-descriptions-item>
-                <el-descriptions-item prop="account">
+                <el-descriptions-item prop="amount">
                     <template slot="label">
                         <i class="el-icon-money"></i>
                         融资金额
                     </template>
-                    {{ this.financingInfoData.account | formatNumber }}
+                    {{ this.financingInfoData.amount | formatNumber }}
                 </el-descriptions-item>
                 <el-descriptions-item prop="financingType">
                     <template slot="label">
@@ -109,12 +109,12 @@
                     </template>
                     {{ this.financingInfoData.repayTime | formatLocalDateTime }}
                 </el-descriptions-item>
-                <el-descriptions-item prop="repayAccount">
+                <el-descriptions-item prop="repayAmount">
                     <template slot="label">
                         <i class="el-icon-money"></i>
                         还款金额
                     </template>
-                    {{ this.financingInfoData.repayAccount | formatNumber }}
+                    {{ this.financingInfoData.repayAmount | formatNumber }}
                 </el-descriptions-item>
             </el-descriptions>
         </div>
@@ -141,10 +141,14 @@
         });
         Vue.filter('formatLocalDateTime', function(value) {
             if (value == null) {
-                return '-'
+                return '-';
             }
             const [year, month, day, hour, minute, second] = value;
-            return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
+            // 检查小时、分钟、秒是否为 undefined，若是则设置为 0
+            const formattedHour = hour !== undefined ? hour.toString().padStart(2, '0') : '00';
+            const formattedMinute = minute !== undefined ? minute.toString().padStart(2, '0') : '00';
+            const formattedSecond = second !== undefined ? second.toString().padStart(2, '0') : '00';
+            return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${formattedHour}:${formattedMinute}:${formattedSecond}`;
         });
         new Vue({
             el: '#financingInfoDetail-app',

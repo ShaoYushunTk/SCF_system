@@ -34,9 +34,9 @@
                         {{scope.row.applyTime | formatLocalDateTime}}
                     </template>
                 </el-table-column>
-                <el-table-column prop="account" align="center" label="融资金额">
+                <el-table-column prop="amount" align="center" label="融资金额">
                     <template slot-scope="scope">
-                        {{scope.row.account | formatNumber}}
+                        {{scope.row.amount | formatNumber}}
                     </template>
                 </el-table-column>
                 <el-table-column prop="financingType" label="融资类型" align="center" :formatter="formatFinancingType"></el-table-column>
@@ -52,6 +52,11 @@
                     </template>
                 </el-table-column>
                 <el-table-column prop="interestRate" align="center" label="年利率"></el-table-column>
+                <el-table-column prop="repayTime" label="还款时间" align="center" width="150">
+                    <template slot-scope="scope">
+                        {{scope.row.repayTime | formatLocalDateTime}}
+                    </template>
+                </el-table-column>
                 <el-table-column label="操作" width="160" align="center">
                     <template slot-scope="scope">
                         <el-button
@@ -109,10 +114,14 @@
         });
         Vue.filter('formatLocalDateTime', function(value) {
             if (value == null) {
-                return '-'
+                return '-';
             }
             const [year, month, day, hour, minute, second] = value;
-            return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
+            // 检查小时、分钟、秒是否为 undefined，若是则设置为 0
+            const formattedHour = hour !== undefined ? hour.toString().padStart(2, '0') : '00';
+            const formattedMinute = minute !== undefined ? minute.toString().padStart(2, '0') : '00';
+            const formattedSecond = second !== undefined ? second.toString().padStart(2, '0') : '00';
+            return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${formattedHour}:${formattedMinute}:${formattedSecond}`;
         });
         new Vue({
             el: '#financingInfoApply-app',
@@ -178,7 +187,7 @@
                     },true)
                 },
                 isRepaymentVisible(row) {
-                    return row.companyId === this.companyId && row.approvalStatus === 'APPROVE' && row.approvalTime != null;
+                    return row.companyId === this.companyId && row.approvalStatus === 'APPROVE' && row.loanTime != null && row.repayTime == null;
                 },
                 handleRepayment(row) {
                     // 弹出二次确认的弹框，用户确认后执行还款操作

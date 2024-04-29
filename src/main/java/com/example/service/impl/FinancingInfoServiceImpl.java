@@ -86,6 +86,9 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
         } else {
             throw new CommonException("当前企业不支持融资");
         }
+        if (financingInfo.getInterestRate().equals(BigDecimal.ZERO)) {
+            throw new CommonException("当前选择的金融机构不支持此信用等级的融资");
+        }
 
         this.save(financingInfo);
         return Result.success("融资信息新建成功");
@@ -126,7 +129,7 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
         // 更新资金流水表
         String companyId = financingInfo.getCompanyId();
         FundFlow fundFlow = new FundFlow();
-        fundFlow.setAccount(financingInfo.getAccount());
+        fundFlow.setAmount(financingInfo.getAmount());
         fundFlow.setPayer(financingInfo.getFinancialInstitutionId());
         fundFlow.setReceiver(companyId);
         fundFlow.setTradingType(TradingType.FINANCING_LOAN);
@@ -140,14 +143,14 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
             companyAsset = new CompanyAsset();
             companyAsset.setId(UUIDUtils.generate());
             companyAsset.setCompanyId(companyId);
-            companyAsset.setCash(financingInfo.getAccount());
+            companyAsset.setCash(financingInfo.getAmount());
             companyAsset.setFinancingInfoList(new ArrayList<>(Collections.singletonList(financingInfo)));
             companyAsset.setOrderAssets(new ArrayList<>());
             companyAssetService.saveOrUpdate(companyAsset);
         } else {
             // 更新企业资金信息
             BigDecimal cash = companyAsset.getCash();
-            cash = cash.add(financingInfo.getAccount());
+            cash = cash.add(financingInfo.getAmount());
             companyAsset.setCash(cash);
             List<FinancingInfo> financingInfoList = companyAsset.getFinancingInfoList();
             if (financingInfoList == null) {
@@ -182,24 +185,25 @@ public class FinancingInfoServiceImpl extends ServiceImpl<FinancingInfoMapper, F
         int days = (int) ChronoUnit.DAYS.between(financingInfo.getLoanTime().toLocalDate(), LocalDateTime.now().toLocalDate());
         // 将年利率转换为日利率
         BigDecimal dailyInterestRate = financingInfo.getInterestRate().divide(BigDecimal.valueOf(365), 10, RoundingMode.HALF_UP);
-        BigDecimal account = financingInfo.getAccount().multiply(BigDecimal.ONE.add(dailyInterestRate.multiply(BigDecimal.valueOf(days))));
-        if (companyAsset.getCash().compareTo(account) < 0) {
+        BigDecimal amount = financingInfo.getAmount().multiply(BigDecimal.ONE.add(dailyInterestRate.multiply(BigDecimal.valueOf(days))));
+        if (companyAsset.getCash().compareTo(amount) < 0) {
             return Result.error("企业资金不足，无法还款");
         }
         // 更新企业资金
         BigDecimal cash = companyAsset.getCash();
-        cash = cash.subtract(account);
+        cash = cash.subtract(amount);
         companyAsset.setCash(cash);
         companyAssetService.saveOrUpdate(companyAsset);
 
         // 更新融资信息的状态为已还款
         financingInfo.setIsRepay(true);
         financingInfo.setRepayTime(LocalDateTime.now());
-        financingInfo.setRepayAccount(account);
+        financingInfo.setRepayAmount(amount);
+        this.saveOrUpdate(financingInfo);
 
         // 更新资金流水表
         FundFlow fundFlow = new FundFlow();
-        fundFlow.setAccount(account);
+        fundFlow.setAmount(amount);
         fundFlow.setPayer(companyId);
         fundFlow.setReceiver(financingInfo.getApprovalId());
         fundFlow.setTradingType(TradingType.FINANCING_REPAYMENT);

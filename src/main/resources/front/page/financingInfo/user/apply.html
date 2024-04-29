@@ -38,8 +38,8 @@
                         <el-option label="供应链融资" value="SUPPLY_CHAIN"></el-option>
                     </el-select>
                 </el-form-item>
-                <el-form-item label="融资金额" prop="account">
-                    <el-input v-model="ruleForm.account"></el-input>
+                <el-form-item label="融资金额" prop="amount">
+                    <el-input v-model="ruleForm.amount"></el-input>
                 </el-form-item>
                 <el-form-item label="融资申请备注" prop="applyComment">
                     <el-input v-model="ruleForm.applyComment"></el-input>
@@ -66,8 +66,8 @@
             data() {
                 return {
                     ruleForm : {
-                        'financingType': '',
-                        'account': '',
+                        'financingType': 'ACCOUNTS_RECEIVABLE',
+                        'amount': '',
                         'applyComment': '',
                         'financialInstitutionId': '',
                     },
@@ -80,9 +80,9 @@
                     interestRate: '',
                     rules: {
                         financingType: [
-                            {required: true, message: '请选择融资类型', trigger: 'blur'},
+                            {required: true, message: '请选择融资类型', trigger: 'change'},
                         ],
-                        account: [
+                        amount: [
                             {required: true, message: '请输入融资金额', trigger: 'change'},
                             {
                                 validator: (rule, value, callback) => {

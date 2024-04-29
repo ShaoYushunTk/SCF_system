@@ -12,4 +12,5 @@ import lombok.Data;
 public class UserRegisterDto extends User {
     private CompanyType companyType;
     private String companyName;
+    private String code;
 }

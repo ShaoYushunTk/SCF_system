@@ -150,20 +150,27 @@ public class UserController {
             throw new CommonException("当前企业下手机号已存在");
         }
 
-        // 注册
-        userRegisterDto.setId(UUIDUtils.generate());
-        userRegisterDto.setIsValid(1);
-        userRegisterDto.setCompanyId(company.getId());
-        User user = new User();
-        BeanUtils.copyProperties(userRegisterDto, user);
-        userService.save(user);
+        String phone = userRegisterDto.getPhone();
+        String code = userRegisterDto.getCode();
+        String codeInRedis = redisTemplate.opsForValue().get(phone);
 
-        httpSession.setAttribute("user",user.getId());
+        if (code != null && code.equals(codeInRedis)) {
+            // 注册
+            userRegisterDto.setId(UUIDUtils.generate());
+            userRegisterDto.setIsValid(1);
+            userRegisterDto.setCompanyId(company.getId());
+            User user = new User();
+            BeanUtils.copyProperties(userRegisterDto, user);
+            userService.save(user);
 
-        Map <String, Object> m = new HashMap<>();
-        m.put("user", user);
-        m.put("companyType", userRegisterDto.getCompanyType().toString());
-        return Result.success(m);
+            httpSession.setAttribute("user",user.getId());
+
+            Map <String, Object> m = new HashMap<>();
+            m.put("user", user);
+            m.put("companyType", userRegisterDto.getCompanyType().toString());
+            return Result.success(m);
+        }
+        throw new CommonException("验证码错误");
     }
 
     @PostMapping("/logout")

@@ -65,7 +65,7 @@ public class FundFlowServiceImpl extends ServiceImpl<FundFlowMapper, FundFlow> i
             contract.submitTransaction("CreateFund",
                     fundFlow.getId(), formattedDateTime,
                     String.valueOf(fundFlow.getTradingType()), fundFlow.getPayer(),
-                    fundFlow.getReceiver(), String.valueOf(fundFlow.getAccount()));
+                    fundFlow.getReceiver(), String.valueOf(fundFlow.getAmount()));
         } catch (ContractException e) {
             throw new CommonException(e.getMessage());
         }

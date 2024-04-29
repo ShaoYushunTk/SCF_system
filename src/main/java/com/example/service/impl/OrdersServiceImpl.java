@@ -161,14 +161,14 @@ public class OrdersServiceImpl extends ServiceImpl<OrderMapper, Orders> implemen
         FundFlow fundFlow = new FundFlow();
         fundFlow.setPayer(order.getPayer());
         fundFlow.setReceiver(order.getReceiver());
-        fundFlow.setAccount(order.getAmount());
+        fundFlow.setAmount(order.getAmount());
         fundFlow.setTradingType(TradingType.PURCHASE_PAYMENT);
         fundFlowService.createFundFlow(fundFlow);
 
         FundFlow fundFlow2 = new FundFlow();
         fundFlow2.setPayer(order.getReceiver());
         fundFlow2.setReceiver(order.getPayer());
-        fundFlow2.setAccount(order.getAmount());
+        fundFlow2.setAmount(order.getAmount());
         fundFlow2.setTradingType(TradingType.SALE_RECEIPT);
         fundFlowService.createFundFlow(fundFlow2);
 

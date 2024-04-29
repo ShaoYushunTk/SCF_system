@@ -28,5 +28,5 @@ public class FundFlow implements Serializable {
     private TradingType tradingType;
     private String payer;
     private String receiver;
-    private BigDecimal account;
+    private BigDecimal amount;
 }

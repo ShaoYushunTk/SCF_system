@@ -27,7 +27,7 @@ public class FinancingInfo implements Serializable {
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     private LocalDateTime applyTime;
     private String companyId;
-    private BigDecimal account;
+    private BigDecimal amount;
     private String applyComment;
 
     private FinancingType financingType;
@@ -47,5 +47,5 @@ public class FinancingInfo implements Serializable {
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     private LocalDateTime repayTime;
-    private BigDecimal repayAccount;
+    private BigDecimal repayAmount;
 }
