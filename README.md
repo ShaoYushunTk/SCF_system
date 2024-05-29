@@ -5,7 +5,7 @@
 ### 2.环境配置
 
 #### 2.1 MySQL
-建表语句 /src/main/resource/ddl.sql
+建表语句 /src/main/resource/scf_system.sql
 自行修改yaml文件配置
 #### 2.2 Redis
 自行修改yaml文件配置
